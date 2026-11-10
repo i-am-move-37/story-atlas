@@ -38,6 +38,15 @@ header.top h1 { font-size: 20px; font-weight: 600; margin: 0; }
 .guide summary { cursor: pointer; font-weight: 600; }
 .guide ul { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; max-width: 75ch; }
 
+.jumplist { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2px 12px; max-height: 40vh; overflow: auto; }
+.jumplist button { width: 100%; text-align: left; border: 0; background: transparent; padding: 4px 6px; border-radius: 4px; display: flex; gap: 8px; align-items: baseline; }
+.jumplist button:hover, .jumplist button.cur { background: var(--panel); }
+.jumplist button.cur { font-weight: 600; }
+.jumplist .st { flex: none; width: 1.2em; color: var(--muted); }
+.jumplist .done .st { color: var(--ok); }
+.jumplist .t { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.jumplist .n { flex: none; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
 .notice { background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 12px 16px; }
 
 .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); gap: 24px; align-items: start; }
@@ -114,6 +123,11 @@ header.top h1 { font-size: 20px; font-weight: 600; margin: 0; }
       <li><b>Plain dramas and comedies may fit nothing.</b> Tick "No genre in the list fits" rather than forcing a label.</li>
       <li>The first 50 works start from a blank page. The other 150 arrive with suggested labels to confirm, change or remove.</li>
     </ul>
+  </details>
+
+  <details class="guide" id="jump">
+    <summary>All works: click one to open it</summary>
+    <ol class="jumplist" id="jumplist"></ol>
   </details>
 
   <div class="notice" id="notice" hidden></div>
@@ -261,6 +275,29 @@ header.top h1 { font-size: 20px; font-weight: 600; margin: 0; }
       box.append(el("span", null, "Suggestions for the 150 aren't loaded yet."));
     var total = state.works.length, done = count(state.works);
     $("bar").style.width = (total ? 100 * done / total : 0) + "%";
+    renderJump();
+  }
+
+  function renderJump() {
+    var list = $("jumplist"), keep = list.scrollTop;
+    list.textContent = "";
+    queue().forEach(function (w, i) {
+      var saved = state.labels[w.id], status = saved ? saved.status : "";
+      var mark = status === "done" ? "✓" : status === "skipped" ? "–" : status === "in_progress" ? "…" : "○";
+      var b = el("button", (w === state.current ? "cur " : "") + (status === "done" ? "done" : "")); b.type = "button";
+      b.append(el("span", "st", mark));
+      b.append(el("span", "t", (i + 1) + ". " + (w.title || "(untitled)")));
+      if (saved && saved.labels) {
+        var border = saved.labels.filter(function (l) { return l.level === "borderline"; }).length;
+        var text = status === "skipped" ? "can't judge" : saved.nofit ? "no fit" :
+          saved.labels.length + (border ? " · " + border + " borderline" : "");
+        b.append(el("span", "n", text));
+      }
+      b.title = status === "done" ? "Saved" : status === "skipped" ? "Marked can't judge" : status === "in_progress" ? "Started, not finished" : "Not started";
+      b.addEventListener("click", function () { open(w); });
+      var li = el("li"); li.append(b); list.append(li);
+    });
+    list.scrollTop = keep;
   }
 
   function paragraphs(text) {
