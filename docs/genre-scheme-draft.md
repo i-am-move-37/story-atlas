@@ -94,5 +94,10 @@ Letters after a name show which sources list it.
 
 These are draft decisions. The scheme is frozen only when the research plan is committed.
 
+## Candidates raised during the labeling pilot
+Not decided. Per call 5 above, nothing is added until the pilot is scored; this list collects what came up, with the evidence, for Scott to decide on afterward.
+
+- **War by conflict: World War II, World War I, Vietnam** (Scott, 2026-11-10, while labeling). The current War subgenres are by story type (combat, home front, POW / escape, military drama, anti-war, resistance). Scott's view: each of these wars is its own genre. For: each has its own conventions (the Vietnam film's disillusionment and homecoming, the WWI story's trenches and futility, the WWII platoon and mission), and the scheme already has a precedent in "Cold War spy." To settle: whether a war film then takes two War labels (conflict and story type), and which other conflicts qualify. Evidence to gather: how many War works in the 200 would take each label.
+
 ## Earlier sizing (draft 1, coarse genres)
 Source labels under-count fine genres badly; e.g. only 185 gangster films and 15 noir films from 1970–89 were labeled. With the 30 coarse genres, 395 of 435 pairs already occur but only 1,673 of 4,060 triples do. Script: session scratchpad `genre_sizes.py`, `pairs.py`. Subgenre sizes can't be estimated from source labels; they'll come from the labeling pilot.
