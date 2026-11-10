@@ -35,11 +35,11 @@ DATASETS = Path("C:/Users/Owner/Home/dat/datasets")
 
 WIKIPEDIA_API = "https://en.wikipedia.org/w/api.php"
 SPARQL_URL = "https://query.wikidata.org/sparql"
-USER_AGENT = "StoryPlotResearch/0.1 (research script; python-urllib)"
+USER_AGENT = "StoryAtlas/0.1 (https://github.com/i-am-move-37/story-atlas) python-urllib"
 # Wikimedia allows 10 requests a minute to a client whose User-Agent has no contact
 # details and 200 a minute to one that has (mediawiki.org/wiki/Wikimedia_APIs/Rate_limits).
-# This User-Agent has none, so we stay under 10.
-REQUESTS_PER_MINUTE = 9
+# This User-Agent names the project's public repository, so we stay well under 200.
+REQUESTS_PER_MINUTE = 150
 MIN_WORDS = 300
 PAGE_BATCH = 50      # Wikipedia API limit per request
 SPARQL_BATCH = 150

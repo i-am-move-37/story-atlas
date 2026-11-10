@@ -1,0 +1,410 @@
+<title>Genre Labeling Pilot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+/* Layout: a reading column for the work on the left, a sticky labeling desk on the right; stacks on a phone. */
+:root {
+  --paper: #f6f7f9; --panel: #ffffff; --ink: #1a2230; --muted: #5b6676; --rule: #d9dee6;
+  --accent: #2f4fa8; --accent-ink: #ffffff; --soft: #e9edf7; --warn: #9a5b00; --warn-soft: #fbf1dc;
+  --ok: #1f6b4a;
+  --ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --read: "Source Serif 4", Georgia, "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #12161d; --panel: #1a2029; --ink: #e6e9ef; --muted: #9aa5b5; --rule: #2e3745;
+  --accent: #8ea6ee; --accent-ink: #10141b; --soft: #232c3d; --warn: #e3b563; --warn-soft: #3a2f17;
+  --ok: #6fc79d; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #12161d; --panel: #1a2029; --ink: #e6e9ef; --muted: #9aa5b5; --rule: #2e3745;
+  --accent: #8ea6ee; --accent-ink: #10141b; --soft: #232c3d; --warn: #e3b563; --warn-soft: #3a2f17;
+  --ok: #6fc79d; color-scheme: dark }
+
+body { background: var(--paper); color: var(--ink); font-family: var(--ui); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px 48px; }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 24px; }
+header.top h1 { font-size: 20px; font-weight: 600; margin: 0; }
+.progress { display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.progress b { color: var(--ink); font-weight: 600; }
+.bar { height: 6px; background: var(--rule); border-radius: 3px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); width: 0; }
+
+.guide { background: var(--soft); border-radius: 8px; padding: 12px 16px; }
+.guide summary { cursor: pointer; font-weight: 600; }
+.guide ul { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; max-width: 75ch; }
+
+.notice { background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 12px 16px; }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); gap: 24px; align-items: start; }
+@media (max-width: 880px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+
+.work { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 20px 24px; min-width: 0; }
+.work .kind { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.work h2 { font-family: var(--read); font-size: 28px; line-height: 1.2; font-weight: 600; margin: 4px 0 6px; text-wrap: balance; }
+.work .meta { color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.work .meta a { color: var(--accent); }
+.work .text { font-family: var(--read); font-size: 17px; line-height: 1.65; max-width: 68ch; margin-top: 16px;
+  display: flex; flex-direction: column; gap: 12px; overflow-wrap: anywhere; }
+.work .text p { margin: 0; }
+
+.desk { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); display: flex; flex-direction: column; gap: 12px;
+  max-height: calc(100vh - 24px); min-width: 0; }
+@media (max-width: 880px) { .desk { position: static; max-height: none; } }
+.desk h3 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 600; }
+
+.chosen { display: flex; flex-direction: column; gap: 6px; }
+.chosen .empty { color: var(--muted); }
+.chip { display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--accent); border-radius: 6px; padding: 5px 6px 5px 10px; background: var(--panel); }
+.chip.borderline { border-style: dashed; }
+.chip.suggested { border-color: var(--warn); background: var(--warn-soft); }
+.chip .name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.chip .name small { color: var(--muted); display: block; font-size: 12px; }
+.seg { display: flex; border: 1px solid var(--rule); border-radius: 5px; overflow: hidden; flex: none; }
+.seg button { border: 0; background: transparent; padding: 3px 8px; font-size: 13px; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.chip .x { border: 0; background: transparent; color: var(--muted); padding: 2px 6px; font-size: 16px; line-height: 1; flex: none; }
+
+#search { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); }
+.tree { overflow: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--panel); min-height: 160px; flex: 1; }
+@media (max-width: 880px) { .tree { max-height: 60vh; } }
+.tree .family { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 10px 12px 4px; position: sticky; top: 0; background: var(--panel); }
+.tree .row { display: flex; align-items: stretch; }
+.tree .pick { flex: 1; text-align: left; border: 0; background: transparent; padding: 5px 12px; min-width: 0; overflow-wrap: anywhere; }
+.tree .pick:hover { background: var(--soft); }
+.tree .pick.on { color: var(--accent); font-weight: 600; }
+.tree .pick.on::after { content: "  ✓"; }
+.tree .genre > .pick { font-weight: 500; }
+.tree .sub .pick { padding-left: 30px; color: var(--muted); }
+.tree .sub .pick.on { color: var(--accent); }
+.tree .open { border: 0; background: transparent; color: var(--muted); width: 36px; flex: none; }
+.tree .none { padding: 12px; color: var(--muted); }
+
+.finish { display: flex; flex-direction: column; gap: 8px; }
+.finish label { display: flex; gap: 8px; align-items: flex-start; }
+#note { width: 100%; box-sizing: border-box; min-height: 44px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); resize: vertical; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { border: 1px solid var(--rule); background: var(--panel); border-radius: 6px; padding: 8px 14px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.status { color: var(--muted); font-size: 13px; }
+.status.ok { color: var(--ok); }
+.status.bad { color: var(--warn); }
+.hint { color: var(--muted); font-size: 13px; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Genre Labeling Pilot</h1>
+    <div class="progress" id="progress">Loading the works…</div>
+  </header>
+  <div class="bar"><i id="bar"></i></div>
+
+  <details class="guide" id="guide" open>
+    <summary>How to label</summary>
+    <ul>
+      <li><b>Label the work itself,</b> not just this summary. Use what you know, and look the work up when you haven't seen or read it. The Wikipedia link is on each work.</li>
+      <li><b>Pick the finest label that applies.</b> A subgenre counts for its parent genre too, so you don't need to pick both.</li>
+      <li><b>Core</b> means the work plainly belongs to that tradition. <b>Borderline</b> means a defensible stretch, like calling Brick a neo-western.</li>
+      <li><b>A mix of two genres is two labels.</b> A science fiction western gets science fiction and western. Romantic comedy is the one exception.</li>
+      <li><b>Plain dramas and comedies may fit nothing.</b> Tick "No genre in the list fits" rather than forcing a label.</li>
+      <li>The first 50 works start from a blank page. The other 150 arrive with suggested labels to confirm, change or remove.</li>
+    </ul>
+  </details>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <div class="cols" id="cols" hidden>
+    <article class="work" id="work"></article>
+
+    <section class="desk" aria-label="Labels">
+      <h3>Labels for this work</h3>
+      <div class="chosen" id="chosen"></div>
+
+      <input id="search" type="search" placeholder="Search genres and subgenres  ( / )" autocomplete="off" aria-label="Search genres and subgenres">
+      <div class="tree" id="tree"></div>
+
+      <div class="finish">
+        <label><input type="checkbox" id="nofit"> <span>No genre in the list fits this work</span></label>
+        <textarea id="note" placeholder="Note (optional): a missing genre, a doubt, why it's borderline"></textarea>
+        <div class="actions">
+          <button class="btn primary" id="done" type="button">Save and next</button>
+          <button class="btn" id="skip" type="button">Can't judge this one</button>
+          <button class="btn" id="prev" type="button">Previous</button>
+          <button class="btn" id="next" type="button">Next</button>
+        </div>
+        <div class="status" id="status" role="status"></div>
+        <div class="hint">Ctrl+Enter saves and moves on. Your work is saved each time you change a label.</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var state = { db: null, scheme: [], names: {}, works: [], labels: {}, current: null,
+                edit: { labels: [], note: "", nofit: false }, open: {}, query: "", worksLoaded: false };
+  var writes = {};     // one write at a time per document
+  var saveTimer = null;
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+  function notice(text) { $("notice").textContent = text; $("notice").hidden = !text; }
+  function setStatus(text, kind) { $("status").textContent = text; $("status").className = "status" + (kind ? " " + kind : ""); }
+
+  // ---------- scheme ----------
+  function indexScheme() {
+    state.scheme.forEach(function (family) {
+      family.genres.forEach(function (g) {
+        state.names[g.id] = { name: g.name, parent: null, family: family.family };
+        g.subgenres.forEach(function (s) { state.names[s.id] = { name: s.name, parent: g.name, family: family.family }; });
+      });
+    });
+  }
+
+  // ---------- which works can be labeled ----------
+  function isDone(id) { var l = state.labels[id]; return !!l && (l.status === "done" || l.status === "skipped"); }
+  function blankLeft() { return state.works.filter(function (w) { return w.mode === "blank" && !isDone(w.id); }).length; }
+  function eligible(w) { return w.mode === "blank" || (blankLeft() === 0 && Array.isArray(w.draft)); }
+  function queue() { return state.works.filter(eligible); }
+  function firstUndone() { var q = queue(); for (var i = 0; i < q.length; i++) if (!isDone(q[i].id)) return q[i]; return null; }
+
+  function open(work) {
+    state.current = work;
+    var saved = work ? state.labels[work.id] : null;
+    if (saved) {
+      state.edit = { labels: (saved.labels || []).map(function (l) { return { id: l.id, level: l.level }; }),
+                     note: saved.note || "", nofit: !!saved.nofit };
+    } else if (work && work.mode === "draft") {
+      state.edit = { labels: (work.draft || []).filter(function (id) { return state.names[id]; })
+                       .map(function (id) { return { id: id, level: "suggested" }; }), note: "", nofit: false };
+    } else {
+      state.edit = { labels: [], note: "", nofit: false };
+    }
+    state.query = ""; $("search").value = "";
+    setStatus("");
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- saving ----------
+  function write(id, body) {
+    var ref = state.db.doc("pilot_labels/" + id);
+    writes[id] = (writes[id] || Promise.resolve()).catch(function () {}).then(function () { return ref.set(body); });
+    return writes[id];
+  }
+  function body(status) {
+    var w = state.current;
+    return { labels: state.edit.labels.map(function (l) { return { id: l.id, level: l.level }; }),
+             note: state.edit.note, nofit: state.edit.nofit, status: status, mode: w.mode,
+             work_id: w.work_id, updatedAt: new Date().toISOString() };
+  }
+  function saveSoon() {
+    if (!state.current) return;
+    var work = state.current;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      if (state.current !== work) return;
+      var status = isDone(work.id) ? state.labels[work.id].status : "in_progress";
+      write(work.id, body(status)).then(function () { setStatus("Saved.", "ok"); },
+        function (e) { setStatus("Couldn't save (" + (e && e.code || "error") + "). Your labels are still on screen; change one to retry.", "bad"); });
+    }, 500);
+  }
+  function finish(status) {
+    var work = state.current;
+    if (!work) return;
+    clearTimeout(saveTimer);
+    var data = body(status);
+    setStatus("Saving…");
+    write(work.id, data).then(function () {
+      state.labels[work.id] = data;
+      var next = firstUndone();
+      if (next) open(next); else { open(work); setStatus(allDone() ? "Saved. All available works are labeled." : "Saved.", "ok"); renderProgress(); }
+    }, function (e) {
+      setStatus("Couldn't save (" + (e && e.code || "error") + "). Nothing was lost; press the button again.", "bad");
+    });
+  }
+  function allDone() { return queue().every(function (w) { return isDone(w.id); }); }
+
+  // ---------- label edits ----------
+  function find(id) { for (var i = 0; i < state.edit.labels.length; i++) if (state.edit.labels[i].id === id) return i; return -1; }
+  function toggle(id) {
+    var i = find(id);
+    if (i >= 0) state.edit.labels.splice(i, 1); else { state.edit.labels.push({ id: id, level: "core" }); state.edit.nofit = false; }
+    renderDesk(); saveSoon();
+  }
+  function setLevel(id, level) { var i = find(id); if (i >= 0) { state.edit.labels[i].level = level; renderDesk(); saveSoon(); } }
+
+  // ---------- rendering ----------
+  function render() { renderProgress(); renderWork(); renderDesk(); }
+
+  function renderProgress() {
+    var blank = state.works.filter(function (w) { return w.mode === "blank"; });
+    var draft = state.works.filter(function (w) { return w.mode === "draft"; });
+    var count = function (list) { return list.filter(function (w) { return isDone(w.id); }).length; };
+    var box = $("progress"); box.textContent = "";
+    if (!state.works.length) { box.textContent = state.worksLoaded ? "No works loaded yet." : "Loading the works…"; return; }
+    var a = el("span"); a.append("Blank page: "); a.append(el("b", null, count(blank) + " / " + blank.length));
+    var b = el("span"); b.append("With suggestions: "); b.append(el("b", null, count(draft) + " / " + draft.length));
+    box.append(a, b);
+    if (blankLeft() === 0 && draft.length && !draft.some(function (w) { return Array.isArray(w.draft); }))
+      box.append(el("span", null, "Suggestions for the 150 aren't loaded yet."));
+    var total = state.works.length, done = count(state.works);
+    $("bar").style.width = (total ? 100 * done / total : 0) + "%";
+  }
+
+  function paragraphs(text) {
+    var sentences = String(text || "").match(/[^.!?]+[.!?]+["')\]]*\s*|[^.!?]+$/g) || [];
+    var out = [];
+    for (var i = 0; i < sentences.length; i += 5) out.push(sentences.slice(i, i + 5).join("").trim());
+    return out;
+  }
+
+  function renderWork() {
+    var w = state.current, box = $("work");
+    box.textContent = "";
+    $("cols").hidden = !w;
+    if (!w) return;
+    var q = queue(), pos = q.indexOf(w) + 1;
+    box.append(el("div", "kind", (w.medium === "novel" ? "Novel" : "Film") + "  ·  " + pos + " of " + q.length +
+      (w.mode === "blank" ? "  ·  blank page" : "  ·  with suggestions") + (isDone(w.id) ? "  ·  saved" : "")));
+    box.append(el("h2", null, w.title || "(untitled)"));
+    var meta = el("div", "meta");
+    meta.append(el("span", null, w.year ? String(w.year) : "Year unknown"));
+    if (w.creators && w.creators.length) meta.append(el("span", null, w.creators.join(", ")));
+    if (w.wikipedia) { var a = el("a", null, "Wikipedia article"); a.href = w.wikipedia; a.target = "_blank"; a.rel = "noopener"; meta.append(a); }
+    box.append(meta);
+    var text = el("div", "text");
+    paragraphs(w.text).forEach(function (p) { text.append(el("p", null, p)); });
+    box.append(text);
+  }
+
+  function renderDesk() {
+    var chosen = $("chosen"); chosen.textContent = "";
+    if (!state.edit.labels.length) chosen.append(el("div", "empty", state.edit.nofit ? "Marked: no genre in the list fits." : "Nothing chosen yet. Pick from the list below."));
+    state.edit.labels.forEach(function (l) {
+      var info = state.names[l.id] || { name: l.id };
+      var chip = el("div", "chip " + l.level);
+      var name = el("div", "name", info.name);
+      if (info.parent) name.append(el("small", null, info.parent));
+      else if (l.level === "suggested") name.append(el("small", null, "suggested: choose core or borderline, or remove"));
+      chip.append(name);
+      var seg = el("div", "seg");
+      [["core", "Core"], ["borderline", "Borderline"]].forEach(function (pair) {
+        var b = el("button", null, pair[1]); b.type = "button";
+        b.setAttribute("aria-pressed", String(l.level === pair[0]));
+        b.addEventListener("click", function () { setLevel(l.id, pair[0]); });
+        seg.append(b);
+      });
+      chip.append(seg);
+      var x = el("button", "x", "×"); x.type = "button"; x.setAttribute("aria-label", "Remove " + info.name);
+      x.addEventListener("click", function () { toggle(l.id); });
+      chip.append(x);
+      chosen.append(chip);
+    });
+    $("nofit").checked = state.edit.nofit;
+    if ($("note").value !== state.edit.note) $("note").value = state.edit.note;
+    var pending = state.edit.labels.some(function (l) { return l.level === "suggested"; });
+    $("done").disabled = pending || (!state.edit.labels.length && !state.edit.nofit);
+    $("done").title = pending ? "Decide each suggested label first" : "";
+    var q = queue(), i = q.indexOf(state.current);
+    $("prev").disabled = i <= 0; $("next").disabled = i < 0 || i >= q.length - 1;
+    renderTree();
+  }
+
+  function pickButton(id, label) {
+    var b = el("button", "pick" + (find(id) >= 0 ? " on" : ""), label); b.type = "button";
+    b.addEventListener("click", function () { toggle(id); });
+    return b;
+  }
+
+  function renderTree() {
+    var tree = $("tree"), keep = tree.scrollTop, q = state.query.trim().toLowerCase(), shown = 0;
+    tree.textContent = "";
+    state.scheme.forEach(function (family) {
+      var rows = [];
+      family.genres.forEach(function (g) {
+        var hitG = !q || g.name.toLowerCase().indexOf(q) >= 0;
+        var subs = g.subgenres.filter(function (s) { return !q || hitG || s.name.toLowerCase().indexOf(q) >= 0; });
+        if (q && !hitG && !subs.length) return;
+        var expanded = q ? true : !!state.open[g.id] || g.subgenres.some(function (s) { return find(s.id) >= 0; });
+        var row = el("div", "row genre"); row.append(pickButton(g.id, g.name));
+        if (g.subgenres.length) {
+          var t = el("button", "open", expanded ? "–" : "+"); t.type = "button";
+          t.setAttribute("aria-label", (expanded ? "Hide" : "Show") + " subgenres of " + g.name);
+          t.addEventListener("click", function () { state.open[g.id] = !expanded; renderTree(); });
+          row.append(t);
+        }
+        rows.push(row); shown++;
+        if (expanded) subs.forEach(function (s) { var r = el("div", "row sub"); r.append(pickButton(s.id, s.name)); rows.push(r); });
+      });
+      if (rows.length) { tree.append(el("div", "family", family.family)); rows.forEach(function (r) { tree.append(r); }); }
+    });
+    if (!shown) tree.append(el("div", "none", "No genre or subgenre matches “" + state.query + "”. Clear the search, or describe what's missing in the note."));
+    tree.scrollTop = keep;
+  }
+
+  // ---------- events ----------
+  $("search").addEventListener("input", function (e) { state.query = e.target.value; renderTree(); });
+  $("note").addEventListener("input", function (e) { state.edit.note = e.target.value; saveSoon(); });
+  $("nofit").addEventListener("change", function (e) {
+    state.edit.nofit = e.target.checked;
+    if (state.edit.nofit) state.edit.labels = [];
+    renderDesk(); saveSoon();
+  });
+  $("done").addEventListener("click", function () { finish("done"); });
+  $("skip").addEventListener("click", function () { finish("skipped"); });
+  $("prev").addEventListener("click", function () { var q = queue(), i = q.indexOf(state.current); if (i > 0) open(q[i - 1]); });
+  $("next").addEventListener("click", function () { var q = queue(), i = q.indexOf(state.current); if (i >= 0 && i < q.length - 1) open(q[i + 1]); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "/" && document.activeElement !== $("search") && document.activeElement !== $("note")) { e.preventDefault(); $("search").focus(); }
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !$("done").disabled) { e.preventDefault(); finish("done"); }
+  });
+  try { if (localStorage.getItem("guide-closed") === "1") $("guide").open = false; } catch (e) {}
+  $("guide").addEventListener("toggle", function () { try { localStorage.setItem("guide-closed", $("guide").open ? "0" : "1"); } catch (e) {} });
+
+  // ---------- start ----------
+  function start(db) {
+    state.db = db;
+    var slow = setTimeout(function () { if (!state.worksLoaded) notice("The works can't be reached yet. Still trying…"); }, 10000);
+    db.collection("pilot_labels").limit(1000).onSnapshot(function (snap) {
+      snap.docs.forEach(function (d) { state.labels[d.id] = d.data(); });
+      renderProgress();
+      if (!state.current && state.worksLoaded) { var w = firstUndone() || queue()[0]; if (w) open(w); }
+    }, function (e) { notice("Lost the connection to saved labels (" + e.code + "). Reload the page to continue."); });
+    db.collection("pilot_works").limit(1000).onSnapshot(function (snap) {
+      if (snap.metadata.fromCache && snap.empty) return;
+      clearTimeout(slow);
+      state.worksLoaded = true;
+      state.works = snap.docs.map(function (d) { var w = Object.assign({ id: d.id }, d.data()); return w; })
+        .sort(function (a, b) { return a.order - b.order; });
+      if (!state.works.length) { notice("No works are loaded yet. They appear here once the 200 pilot works have been drawn."); renderProgress(); return; }
+      notice("");
+      if (state.current) {
+        var same = state.works.filter(function (w) { return w.id === state.current.id; })[0];
+        if (same) state.current = same;
+        renderProgress(); renderDesk();
+      } else { open(firstUndone() || queue()[0] || null); }
+    }, function (e) { clearTimeout(slow); notice("The works couldn't be loaded (" + e.code + "). Reload the page to try again."); });
+  }
+
+  fetch("scheme.json").then(function (r) { return r.json(); }).then(function (scheme) {
+    state.scheme = scheme; indexScheme();
+    if (!window.claude || !window.claude.use) { notice("This page saves labels through Claude's artifact viewer. Open it from its claude.ai link."); return; }
+    return window.claude.use("db").then(function (db) {
+      if (!db) { notice("Saving isn't available in this view. Open the page signed in, from its claude.ai link."); return; }
+      start(db);
+    });
+  }).catch(function () { notice("The genre list couldn't be loaded. Reload the page to try again."); });
+})();
+</script>

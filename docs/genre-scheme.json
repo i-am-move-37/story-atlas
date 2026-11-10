@@ -1,0 +1,1166 @@
+[
+ {
+  "family": "Crime",
+  "genres": [
+   {
+    "id": "noir",
+    "name": "Noir",
+    "subgenres": [
+     {
+      "id": "noir/film-noir-noir-fiction",
+      "name": "film noir / noir fiction"
+     },
+     {
+      "id": "noir/neo-noir",
+      "name": "neo-noir"
+     },
+     {
+      "id": "noir/hardboiled",
+      "name": "hardboiled"
+     },
+     {
+      "id": "noir/southern-noir",
+      "name": "Southern noir"
+     }
+    ]
+   },
+   {
+    "id": "detective-mystery",
+    "name": "Detective / mystery",
+    "subgenres": [
+     {
+      "id": "detective-mystery/whodunit",
+      "name": "whodunit"
+     },
+     {
+      "id": "detective-mystery/cozy-mystery",
+      "name": "cozy mystery"
+     },
+     {
+      "id": "detective-mystery/locked-room-mystery",
+      "name": "locked-room mystery"
+     },
+     {
+      "id": "detective-mystery/police-procedural",
+      "name": "police procedural"
+     },
+     {
+      "id": "detective-mystery/murder-mystery",
+      "name": "murder mystery"
+     },
+     {
+      "id": "detective-mystery/gong-an",
+      "name": "gong'an"
+     },
+     {
+      "id": "detective-mystery/amateur-sleuth",
+      "name": "amateur sleuth"
+     },
+     {
+      "id": "detective-mystery/cop-buddy-cop",
+      "name": "cop / buddy cop"
+     }
+    ]
+   },
+   {
+    "id": "gangster",
+    "name": "Gangster",
+    "subgenres": [
+     {
+      "id": "gangster/mafia",
+      "name": "mafia"
+     },
+     {
+      "id": "gangster/yakuza",
+      "name": "yakuza"
+     },
+     {
+      "id": "gangster/heroic-bloodshed",
+      "name": "heroic bloodshed"
+     },
+     {
+      "id": "gangster/hood-film",
+      "name": "hood film"
+     },
+     {
+      "id": "gangster/mumbai-underworld",
+      "name": "Mumbai underworld"
+     },
+     {
+      "id": "gangster/rise-and-fall-gangster",
+      "name": "rise-and-fall gangster"
+     },
+     {
+      "id": "gangster/newgate-novel",
+      "name": "Newgate novel"
+     }
+    ]
+   },
+   {
+    "id": "heist-caper",
+    "name": "Heist / caper",
+    "subgenres": [
+     {
+      "id": "heist-caper/heist",
+      "name": "heist"
+     },
+     {
+      "id": "heist-caper/caper",
+      "name": "caper"
+     },
+     {
+      "id": "heist-caper/gentleman-thief",
+      "name": "gentleman thief"
+     }
+    ]
+   },
+   {
+    "id": "legal",
+    "name": "Legal",
+    "subgenres": [
+     {
+      "id": "legal/courtroom-trial-film",
+      "name": "courtroom / trial film"
+     },
+     {
+      "id": "legal/legal-thriller",
+      "name": "legal thriller"
+     },
+     {
+      "id": "legal/legal-drama",
+      "name": "legal drama"
+     }
+    ]
+   },
+   {
+    "id": "prison",
+    "name": "Prison",
+    "subgenres": [
+     {
+      "id": "prison/prison-drama",
+      "name": "prison drama"
+     },
+     {
+      "id": "prison/prison-escape",
+      "name": "prison escape"
+     },
+     {
+      "id": "prison/women-in-prison",
+      "name": "women-in-prison"
+     }
+    ]
+   },
+   {
+    "id": "vigilante-revenge",
+    "name": "Vigilante / revenge",
+    "subgenres": [
+     {
+      "id": "vigilante-revenge/vigilante",
+      "name": "vigilante"
+     },
+     {
+      "id": "vigilante-revenge/rape-revenge",
+      "name": "rape-revenge"
+     },
+     {
+      "id": "vigilante-revenge/poliziotteschi",
+      "name": "poliziotteschi"
+     }
+    ]
+   },
+   {
+    "id": "thriller",
+    "name": "Thriller",
+    "subgenres": [
+     {
+      "id": "thriller/psychological-thriller",
+      "name": "psychological thriller"
+     },
+     {
+      "id": "thriller/political-thriller",
+      "name": "political thriller"
+     },
+     {
+      "id": "thriller/techno-thriller",
+      "name": "techno-thriller"
+     },
+     {
+      "id": "thriller/conspiracy-paranoid-thriller",
+      "name": "conspiracy / paranoid thriller"
+     },
+     {
+      "id": "thriller/erotic-thriller",
+      "name": "erotic thriller"
+     },
+     {
+      "id": "thriller/social-thriller",
+      "name": "social thriller"
+     },
+     {
+      "id": "thriller/disaster-thriller",
+      "name": "disaster thriller"
+     },
+     {
+      "id": "thriller/home-invasion",
+      "name": "home invasion"
+     }
+    ]
+   },
+   {
+    "id": "spy",
+    "name": "Spy",
+    "subgenres": [
+     {
+      "id": "spy/espionage-realist-spy",
+      "name": "espionage / realist spy"
+     },
+     {
+      "id": "spy/gadget-spy-spy-fi",
+      "name": "gadget spy / spy-fi"
+     },
+     {
+      "id": "spy/cold-war-spy",
+      "name": "Cold War spy"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "family": "Speculative",
+  "genres": [
+   {
+    "id": "science-fiction",
+    "name": "Science fiction",
+    "subgenres": [
+     {
+      "id": "science-fiction/hard-sf",
+      "name": "hard SF"
+     },
+     {
+      "id": "science-fiction/soft-social-sf",
+      "name": "soft / social SF"
+     },
+     {
+      "id": "science-fiction/space-opera",
+      "name": "space opera"
+     },
+     {
+      "id": "science-fiction/planetary-romance",
+      "name": "planetary romance"
+     },
+     {
+      "id": "science-fiction/military-sf",
+      "name": "military SF"
+     },
+     {
+      "id": "science-fiction/cyberpunk",
+      "name": "cyberpunk"
+     },
+     {
+      "id": "science-fiction/post-cyberpunk",
+      "name": "post-cyberpunk"
+     },
+     {
+      "id": "science-fiction/retro-punk-steampunk-dieselpunk-atompunk",
+      "name": "retro-punk (steampunk, dieselpunk, atompunk)"
+     },
+     {
+      "id": "science-fiction/biopunk",
+      "name": "biopunk"
+     },
+     {
+      "id": "science-fiction/apocalyptic-post-apocalyptic",
+      "name": "apocalyptic / post-apocalyptic"
+     },
+     {
+      "id": "science-fiction/dystopian",
+      "name": "dystopian"
+     },
+     {
+      "id": "science-fiction/utopian",
+      "name": "utopian"
+     },
+     {
+      "id": "science-fiction/parallel-universe",
+      "name": "parallel universe"
+     },
+     {
+      "id": "science-fiction/time-travel",
+      "name": "time travel"
+     },
+     {
+      "id": "science-fiction/first-contact-alien-invasion",
+      "name": "first contact / alien invasion"
+     },
+     {
+      "id": "science-fiction/tokusatsu",
+      "name": "tokusatsu"
+     },
+     {
+      "id": "science-fiction/feminist-sf",
+      "name": "feminist SF"
+     }
+    ]
+   },
+   {
+    "id": "fantasy",
+    "name": "Fantasy",
+    "subgenres": [
+     {
+      "id": "fantasy/high-epic-fantasy",
+      "name": "high / epic fantasy"
+     },
+     {
+      "id": "fantasy/sword-and-sorcery",
+      "name": "sword and sorcery"
+     },
+     {
+      "id": "fantasy/heroic-fantasy",
+      "name": "heroic fantasy"
+     },
+     {
+      "id": "fantasy/dark-fantasy",
+      "name": "dark fantasy"
+     },
+     {
+      "id": "fantasy/contemporary-urban-fantasy",
+      "name": "contemporary / urban fantasy"
+     },
+     {
+      "id": "fantasy/portal-fantasy",
+      "name": "portal fantasy"
+     },
+     {
+      "id": "fantasy/historical-fantasy",
+      "name": "historical fantasy"
+     },
+     {
+      "id": "fantasy/gaslamp-fantasy",
+      "name": "gaslamp fantasy"
+     },
+     {
+      "id": "fantasy/magic-realism",
+      "name": "magic realism"
+     },
+     {
+      "id": "fantasy/mythic-fiction",
+      "name": "mythic fiction"
+     },
+     {
+      "id": "fantasy/sword-and-planet",
+      "name": "sword and planet"
+     },
+     {
+      "id": "fantasy/dying-earth",
+      "name": "dying earth"
+     },
+     {
+      "id": "fantasy/bangsian",
+      "name": "Bangsian"
+     },
+     {
+      "id": "fantasy/shenmo",
+      "name": "shenmo"
+     },
+     {
+      "id": "fantasy/hard-fantasy",
+      "name": "hard fantasy"
+     },
+     {
+      "id": "fantasy/magical-girl",
+      "name": "magical girl"
+     }
+    ]
+   },
+   {
+    "id": "fairy-tale-fable",
+    "name": "Fairy tale & fable",
+    "subgenres": [
+     {
+      "id": "fairy-tale-fable/fairy-tale",
+      "name": "fairy tale"
+     },
+     {
+      "id": "fairy-tale-fable/literary-fairy-tale",
+      "name": "literary fairy tale"
+     },
+     {
+      "id": "fairy-tale-fable/fable",
+      "name": "fable"
+     },
+     {
+      "id": "fairy-tale-fable/legend",
+      "name": "legend"
+     }
+    ]
+   },
+   {
+    "id": "horror",
+    "name": "Horror",
+    "subgenres": [
+     {
+      "id": "horror/slasher",
+      "name": "slasher"
+     },
+     {
+      "id": "horror/splatter-gore",
+      "name": "splatter / gore"
+     },
+     {
+      "id": "horror/body-horror",
+      "name": "body horror"
+     },
+     {
+      "id": "horror/psychological-horror",
+      "name": "psychological horror"
+     },
+     {
+      "id": "horror/ghost-haunting",
+      "name": "ghost / haunting"
+     },
+     {
+      "id": "horror/occult-satanic",
+      "name": "occult / satanic"
+     },
+     {
+      "id": "horror/folk-horror",
+      "name": "folk horror"
+     },
+     {
+      "id": "horror/creature-feature",
+      "name": "creature feature"
+     },
+     {
+      "id": "horror/kaiju",
+      "name": "kaiju"
+     },
+     {
+      "id": "horror/vampire",
+      "name": "vampire"
+     },
+     {
+      "id": "horror/werewolf",
+      "name": "werewolf"
+     },
+     {
+      "id": "horror/zombie",
+      "name": "zombie"
+     },
+     {
+      "id": "horror/outbreak",
+      "name": "outbreak"
+     },
+     {
+      "id": "horror/found-footage",
+      "name": "found footage"
+     },
+     {
+      "id": "horror/survival-horror",
+      "name": "survival horror"
+     },
+     {
+      "id": "horror/cannibal",
+      "name": "cannibal"
+     },
+     {
+      "id": "horror/eco-natural-horror",
+      "name": "eco / natural horror"
+     },
+     {
+      "id": "horror/lovecraftian-cosmic",
+      "name": "Lovecraftian / cosmic"
+     },
+     {
+      "id": "horror/religious-horror",
+      "name": "religious horror"
+     },
+     {
+      "id": "horror/giallo",
+      "name": "giallo"
+     },
+     {
+      "id": "horror/j-horror-and-asian-horror",
+      "name": "J-horror and Asian horror"
+     },
+     {
+      "id": "horror/art-horror",
+      "name": "art horror"
+     },
+     {
+      "id": "horror/holiday-horror",
+      "name": "holiday horror"
+     }
+    ]
+   },
+   {
+    "id": "gothic",
+    "name": "Gothic",
+    "subgenres": [
+     {
+      "id": "gothic/gothic-novel",
+      "name": "gothic novel"
+     },
+     {
+      "id": "gothic/gothic-romance",
+      "name": "gothic romance"
+     },
+     {
+      "id": "gothic/southern-gothic",
+      "name": "Southern gothic"
+     },
+     {
+      "id": "gothic/suburban-gothic",
+      "name": "suburban gothic"
+     },
+     {
+      "id": "gothic/urban-gothic",
+      "name": "urban gothic"
+     },
+     {
+      "id": "gothic/imperial-gothic",
+      "name": "imperial gothic"
+     }
+    ]
+   },
+   {
+    "id": "superhero",
+    "name": "Superhero",
+    "subgenres": [
+     {
+      "id": "superhero/origin-story",
+      "name": "origin story"
+     },
+     {
+      "id": "superhero/team-up",
+      "name": "team-up"
+     },
+     {
+      "id": "superhero/deconstruction",
+      "name": "deconstruction"
+     }
+    ]
+   },
+   {
+    "id": "weird-absurdist",
+    "name": "Weird & absurdist",
+    "subgenres": [
+     {
+      "id": "weird-absurdist/weird-fiction",
+      "name": "weird fiction"
+     },
+     {
+      "id": "weird-absurdist/slipstream",
+      "name": "slipstream"
+     },
+     {
+      "id": "weird-absurdist/surrealist",
+      "name": "surrealist"
+     },
+     {
+      "id": "weird-absurdist/absurdist",
+      "name": "absurdist"
+     },
+     {
+      "id": "weird-absurdist/kafkaesque-paranoid-fiction",
+      "name": "Kafkaesque / paranoid fiction"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "family": "Action & adventure",
+  "genres": [
+   {
+    "id": "adventure",
+    "name": "Adventure",
+    "subgenres": [
+     {
+      "id": "adventure/swashbuckler",
+      "name": "swashbuckler"
+     },
+     {
+      "id": "adventure/pirate",
+      "name": "pirate"
+     },
+     {
+      "id": "adventure/lost-world",
+      "name": "lost world"
+     },
+     {
+      "id": "adventure/treasure-hunt",
+      "name": "treasure hunt"
+     },
+     {
+      "id": "adventure/sea-story",
+      "name": "sea story"
+     },
+     {
+      "id": "adventure/survival-robinsonade",
+      "name": "survival / Robinsonade"
+     },
+     {
+      "id": "adventure/ruritanian-romance",
+      "name": "Ruritanian romance"
+     },
+     {
+      "id": "adventure/jungle-adventure",
+      "name": "jungle adventure"
+     }
+    ]
+   },
+   {
+    "id": "action",
+    "name": "Action",
+    "subgenres": [
+     {
+      "id": "action/martial-arts",
+      "name": "martial arts"
+     },
+     {
+      "id": "action/wuxia",
+      "name": "wuxia"
+     },
+     {
+      "id": "action/girls-with-guns",
+      "name": "girls with guns"
+     },
+     {
+      "id": "action/military-action",
+      "name": "military action"
+     },
+     {
+      "id": "action/one-man-army",
+      "name": "one-man army"
+     },
+     {
+      "id": "action/chase-pursuit",
+      "name": "chase / pursuit"
+     }
+    ]
+   },
+   {
+    "id": "war",
+    "name": "War",
+    "subgenres": [
+     {
+      "id": "war/combat",
+      "name": "combat"
+     },
+     {
+      "id": "war/home-front",
+      "name": "home front"
+     },
+     {
+      "id": "war/pow-escape",
+      "name": "POW / escape"
+     },
+     {
+      "id": "war/military-drama",
+      "name": "military drama"
+     },
+     {
+      "id": "war/anti-war",
+      "name": "anti-war"
+     },
+     {
+      "id": "war/resistance",
+      "name": "resistance"
+     }
+    ]
+   },
+   {
+    "id": "western",
+    "name": "Western",
+    "subgenres": [
+     {
+      "id": "western/classic",
+      "name": "classic"
+     },
+     {
+      "id": "western/epic",
+      "name": "epic"
+     },
+     {
+      "id": "western/outlaw",
+      "name": "outlaw"
+     },
+     {
+      "id": "western/marshal",
+      "name": "marshal"
+     },
+     {
+      "id": "western/revenge",
+      "name": "revenge"
+     },
+     {
+      "id": "western/revisionist",
+      "name": "revisionist"
+     },
+     {
+      "id": "western/spaghetti",
+      "name": "spaghetti"
+     },
+     {
+      "id": "western/empire",
+      "name": "empire"
+     },
+     {
+      "id": "western/acid-western",
+      "name": "acid western"
+     }
+    ]
+   },
+   {
+    "id": "disaster",
+    "name": "Disaster",
+    "subgenres": [
+     {
+      "id": "disaster/natural-disaster",
+      "name": "natural disaster"
+     },
+     {
+      "id": "disaster/man-made-catastrophe",
+      "name": "man-made catastrophe"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "family": "Comedy",
+  "genres": [
+   {
+    "id": "romantic-comedy",
+    "name": "Romantic comedy",
+    "subgenres": [
+     {
+      "id": "romantic-comedy/screwball",
+      "name": "screwball"
+     },
+     {
+      "id": "romantic-comedy/comedy-of-remarriage",
+      "name": "comedy of remarriage"
+     },
+     {
+      "id": "romantic-comedy/sex-comedy",
+      "name": "sex comedy"
+     },
+     {
+      "id": "romantic-comedy/bromantic-comedy",
+      "name": "bromantic comedy"
+     }
+    ]
+   },
+   {
+    "id": "satire",
+    "name": "Satire",
+    "subgenres": [
+     {
+      "id": "satire/political-satire",
+      "name": "political satire"
+     },
+     {
+      "id": "satire/mockumentary",
+      "name": "mockumentary"
+     },
+     {
+      "id": "satire/comedy-of-manners",
+      "name": "comedy of manners"
+     },
+     {
+      "id": "satire/silver-fork-novel",
+      "name": "silver-fork novel"
+     }
+    ]
+   },
+   {
+    "id": "farce-slapstick",
+    "name": "Farce & slapstick",
+    "subgenres": [
+     {
+      "id": "farce-slapstick/slapstick",
+      "name": "slapstick"
+     },
+     {
+      "id": "farce-slapstick/silent-comedy",
+      "name": "silent comedy"
+     },
+     {
+      "id": "farce-slapstick/bedroom-farce",
+      "name": "bedroom farce"
+     },
+     {
+      "id": "farce-slapstick/gross-out",
+      "name": "gross-out"
+     },
+     {
+      "id": "farce-slapstick/prank-comedy",
+      "name": "prank comedy"
+     }
+    ]
+   },
+   {
+    "id": "parody-spoof",
+    "name": "Parody / spoof",
+    "subgenres": []
+   },
+   {
+    "id": "black-comedy",
+    "name": "Black comedy",
+    "subgenres": []
+   },
+   {
+    "id": "buddy-hangout",
+    "name": "Buddy & hangout",
+    "subgenres": [
+     {
+      "id": "buddy-hangout/buddy-comedy",
+      "name": "buddy comedy"
+     },
+     {
+      "id": "buddy-hangout/hangout-movie",
+      "name": "hangout movie"
+     }
+    ]
+   },
+   {
+    "id": "nonsense-comedy",
+    "name": "Nonsense comedy",
+    "subgenres": [
+     {
+      "id": "nonsense-comedy/surreal-humour",
+      "name": "surreal humour"
+     },
+     {
+      "id": "nonsense-comedy/mo-lei-tau",
+      "name": "mo lei tau"
+     },
+     {
+      "id": "nonsense-comedy/whimsical",
+      "name": "whimsical"
+     }
+    ]
+   },
+   {
+    "id": "commedia-all-italiana",
+    "name": "Commedia all'italiana",
+    "subgenres": []
+   }
+  ]
+ },
+ {
+  "family": "Romance & melodrama",
+  "genres": [
+   {
+    "id": "romance",
+    "name": "Romance",
+    "subgenres": [
+     {
+      "id": "romance/contemporary-romance",
+      "name": "contemporary romance"
+     },
+     {
+      "id": "romance/historical-romance",
+      "name": "historical romance"
+     },
+     {
+      "id": "romance/regency-romance",
+      "name": "Regency romance"
+     },
+     {
+      "id": "romance/paranormal-romance",
+      "name": "paranormal romance"
+     },
+     {
+      "id": "romance/romantic-drama",
+      "name": "romantic drama"
+     },
+     {
+      "id": "romance/medical-romance",
+      "name": "medical romance"
+     },
+     {
+      "id": "romance/chick-flick",
+      "name": "chick flick"
+     },
+     {
+      "id": "romance/courtship-novel",
+      "name": "courtship novel"
+     }
+    ]
+   },
+   {
+    "id": "melodrama",
+    "name": "Melodrama",
+    "subgenres": [
+     {
+      "id": "melodrama/woman-s-film",
+      "name": "woman's film"
+     },
+     {
+      "id": "melodrama/maternal-melodrama",
+      "name": "maternal melodrama"
+     },
+     {
+      "id": "melodrama/family-saga",
+      "name": "family saga"
+     },
+     {
+      "id": "melodrama/tearjerker",
+      "name": "tearjerker"
+     },
+     {
+      "id": "melodrama/telenovela-style-melodrama",
+      "name": "telenovela-style melodrama"
+     }
+    ]
+   },
+   {
+    "id": "musical",
+    "name": "Musical",
+    "subgenres": [
+     {
+      "id": "musical/backstage-musical",
+      "name": "backstage musical"
+     },
+     {
+      "id": "musical/dance-film",
+      "name": "dance film"
+     },
+     {
+      "id": "musical/jukebox-musical",
+      "name": "jukebox musical"
+     },
+     {
+      "id": "musical/masala-film",
+      "name": "masala film"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "family": "Youth & family",
+  "genres": [
+   {
+    "id": "teen-coming-of-age",
+    "name": "Teen / coming of age",
+    "subgenres": [
+     {
+      "id": "teen-coming-of-age/teen-drama",
+      "name": "teen drama"
+     },
+     {
+      "id": "teen-coming-of-age/high-school",
+      "name": "high school"
+     },
+     {
+      "id": "teen-coming-of-age/coming-of-age-bildungsroman",
+      "name": "coming of age / bildungsroman"
+     },
+     {
+      "id": "teen-coming-of-age/campus-novel",
+      "name": "campus novel"
+     },
+     {
+      "id": "teen-coming-of-age/teen-sex-comedy",
+      "name": "teen sex comedy"
+     }
+    ]
+   },
+   {
+    "id": "children-s-family",
+    "name": "Children's / family",
+    "subgenres": [
+     {
+      "id": "children-s-family/animal-story",
+      "name": "animal story"
+     },
+     {
+      "id": "children-s-family/school-story",
+      "name": "school story"
+     },
+     {
+      "id": "children-s-family/family-adventure",
+      "name": "family adventure"
+     }
+    ]
+   },
+   {
+    "id": "young-adult",
+    "name": "Young adult",
+    "subgenres": [
+     {
+      "id": "young-adult/ya-dystopia",
+      "name": "YA dystopia"
+     },
+     {
+      "id": "young-adult/ya-romance",
+      "name": "YA romance"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "family": "History, society & real life",
+  "genres": [
+   {
+    "id": "historical",
+    "name": "Historical",
+    "subgenres": [
+     {
+      "id": "historical/historical-epic",
+      "name": "historical epic"
+     },
+     {
+      "id": "historical/sword-and-sandal-biblical",
+      "name": "sword and sandal / biblical"
+     },
+     {
+      "id": "historical/costume-period-drama",
+      "name": "costume / period drama"
+     },
+     {
+      "id": "historical/jidaigeki-samurai",
+      "name": "jidaigeki / samurai"
+     },
+     {
+      "id": "historical/historical-event",
+      "name": "historical event"
+     },
+     {
+      "id": "historical/alternate-history",
+      "name": "alternate history"
+     }
+    ]
+   },
+   {
+    "id": "biographical",
+    "name": "Biographical",
+    "subgenres": [
+     {
+      "id": "biographical/biopic",
+      "name": "biopic"
+     },
+     {
+      "id": "biographical/docudrama",
+      "name": "docudrama"
+     }
+    ]
+   },
+   {
+    "id": "social-realism",
+    "name": "Social realism",
+    "subgenres": [
+     {
+      "id": "social-realism/social-problem-film",
+      "name": "social problem film"
+     },
+     {
+      "id": "social-realism/kitchen-sink-realism",
+      "name": "kitchen-sink realism"
+     },
+     {
+      "id": "social-realism/urban-fiction",
+      "name": "urban fiction"
+     },
+     {
+      "id": "social-realism/political-drama-fiction",
+      "name": "political drama / fiction"
+     }
+    ]
+   },
+   {
+    "id": "professional-drama",
+    "name": "Professional drama",
+    "subgenres": [
+     {
+      "id": "professional-drama/medical-drama",
+      "name": "medical drama"
+     },
+     {
+      "id": "professional-drama/newsroom",
+      "name": "newsroom"
+     },
+     {
+      "id": "professional-drama/workplace",
+      "name": "workplace"
+     }
+    ]
+   },
+   {
+    "id": "psychological-philosophical",
+    "name": "Psychological & philosophical",
+    "subgenres": [
+     {
+      "id": "psychological-philosophical/psychological-drama",
+      "name": "psychological drama"
+     },
+     {
+      "id": "psychological-philosophical/philosophical-fiction",
+      "name": "philosophical fiction"
+     }
+    ]
+   },
+   {
+    "id": "religious",
+    "name": "Religious",
+    "subgenres": [
+     {
+      "id": "religious/religious-drama",
+      "name": "religious drama"
+     },
+     {
+      "id": "religious/devotional",
+      "name": "devotional"
+     }
+    ]
+   },
+   {
+    "id": "road-picaresque",
+    "name": "Road & picaresque",
+    "subgenres": [
+     {
+      "id": "road-picaresque/road-movie",
+      "name": "road movie"
+     },
+     {
+      "id": "road-picaresque/picaresque",
+      "name": "picaresque"
+     }
+    ]
+   },
+   {
+    "id": "sports",
+    "name": "Sports",
+    "subgenres": [
+     {
+      "id": "sports/underdog-sports",
+      "name": "underdog sports"
+     },
+     {
+      "id": "sports/boxing",
+      "name": "boxing"
+     }
+    ]
+   },
+   {
+    "id": "exploitation",
+    "name": "Exploitation",
+    "subgenres": [
+     {
+      "id": "exploitation/blaxploitation",
+      "name": "blaxploitation"
+     },
+     {
+      "id": "exploitation/sexploitation",
+      "name": "sexploitation"
+     }
+    ]
+   }
+  ]
+ }
+]
