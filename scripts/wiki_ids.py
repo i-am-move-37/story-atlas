@@ -10,7 +10,7 @@ Output (data/wiki/):
   wikidata.jsonl  one record per Wikidata item
   rows.parquet    uid -> lookup key, for every candidate row
 
-Usage: uv run scripts/wiki_ids.py pages | wikidata
+Usage: uv run scripts/wiki_ids.py pages | wikidata | creators
 """
 
 import argparse
@@ -62,6 +62,8 @@ def wait_for_slot():
 # series, follows, followed by, derivative work, IMDb ID, country, original language.
 PROPS = ["P31", "P577", "P571", "P136", "P144", "P179", "P155", "P156", "P4969",
          "P345", "P495", "P364"]
+
+CREATOR_PROPS = ["P57", "P50"]  # director, author
 
 FILM_WORD = re.compile(r"\bfilm\b")
 NOT_A_FILM = re.compile(r"film (series|franchise|trilogy|festival|award|genre|score|studio)")
@@ -181,10 +183,10 @@ def lookup_pages(batch, by):
     return parse_pages(fetch_json(WIKIPEDIA_API, data=params), batch, by)
 
 
-def lookup_wikidata(qids):
-    """Facts and sitelink counts for a batch of Wikidata items."""
+def lookup_wikidata(qids, prop_ids=None, sitelinks=True):
+    """Facts (and, by default, sitelink counts) for a batch of Wikidata items."""
     values = " ".join(f"wd:{q}" for q in qids)
-    props = " ".join(f"wdt:{p}" for p in PROPS)
+    props = " ".join(f"wdt:{p}" for p in (prop_ids or PROPS))
     facts_query = f"""SELECT ?item ?p ?v ?vLabel WHERE {{
       VALUES ?item {{ {values} }} VALUES ?p {{ {props} }}
       ?item ?p ?v .
@@ -194,9 +196,10 @@ def lookup_wikidata(qids):
     accept = "application/sparql-results+json"
     facts = facts_from_bindings(
         fetch_json(SPARQL_URL, {"query": facts_query}, accept)["results"]["bindings"])
-    for row in fetch_json(SPARQL_URL, {"query": links_query}, accept)["results"]["bindings"]:
-        qid = row["item"]["value"].rsplit("/", 1)[1]
-        facts.setdefault(qid, {})["sitelinks"] = int(row["n"]["value"])
+    if sitelinks:
+        for row in fetch_json(SPARQL_URL, {"query": links_query}, accept)["results"]["bindings"]:
+            qid = row["item"]["value"].rsplit("/", 1)[1]
+            facts.setdefault(qid, {})["sitelinks"] = int(row["n"]["value"])
     return {q: facts.get(q, {}) for q in qids}
 
 
@@ -287,8 +290,22 @@ def wikidata_pass():
     run_batches(chunks(qids, SPARQL_BATCH), work, path, "wikidata")
 
 
+def creators_pass():
+    """Directors (P57) and authors (P50), kept apart from the main facts file."""
+    pages = load_jsonl(OUT / "pages.jsonl", "key")
+    path = OUT / "creators.jsonl"
+    done = load_jsonl(path, "qid")
+    qids = sorted({p["qid"] for p in pages.values() if p.get("qid")} - set(done))
+
+    def work(batch):
+        found = lookup_wikidata(batch, prop_ids=CREATOR_PROPS, sitelinks=False)
+        return [{"qid": q, **facts} for q, facts in found.items()]
+
+    run_batches(chunks(qids, SPARQL_BATCH), work, path, "creators")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("step", choices=["pages", "wikidata"])
+    parser.add_argument("step", choices=["pages", "wikidata", "creators"])
     step = parser.parse_args().step
-    sys.exit(pages_pass() if step == "pages" else wikidata_pass())
+    sys.exit({"pages": pages_pass, "wikidata": wikidata_pass, "creators": creators_pass}[step]())

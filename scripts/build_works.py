@@ -28,6 +28,7 @@ DATASETS = Path("C:/Users/Owner/Home/dat/datasets")
 
 TAG_RE = re.compile(r"^(.*?)\s*\(([^()]*)\)$")
 YEAR_TOLERANCE = 1
+FIRST_YEAR, LAST_YEAR = 1000, 2017  # the sources end in 2017; other Wikidata years are errors
 LINK_PROPS = {"P144": "based_on", "P179": "series", "P155": "follows",
               "P156": "followed_by", "P4969": "derivatives"}
 
@@ -49,11 +50,19 @@ def tag_year(raw_title):
     return int(y.group(1)) if y else None
 
 
+def strip_tag(page_title):
+    """'Alien (1979 film)' -> 'Alien'; None stays None."""
+    if not isinstance(page_title, str):
+        return None
+    m = TAG_RE.match(page_title)
+    return m.group(1) if m else page_title
+
+
 def pick_year(wikidata_year, source_years):
     """(year, where it came from): Wikidata first, else the earliest source year."""
-    if wikidata_year:
-        return wikidata_year, "wikidata"
     years = [int(y) for y in source_years if y is not None and not pd.isna(y)]
+    if wikidata_year and FIRST_YEAR <= wikidata_year <= LAST_YEAR:
+        return wikidata_year, "wikidata"
     return (min(years), "source") if years else (None, None)
 
 
@@ -80,6 +89,9 @@ def assign_works(rows):
     for r in rows:
         if r["qid"]:
             continue
+        if not r["key"]:  # no usable title: never merge by title
+            works[r["uid"]] = f"u:{r['uid']}:{r['medium']}"
+            continue
         candidates = titled.get((r["medium"], r["key"]), {})
         if len(candidates) == 1:
             work, years = next(iter(candidates.items()))
@@ -99,7 +111,7 @@ def _cluster_unmatched(medium, key, group):
     dated = sorted((r for r in group if r["year"] is not None), key=lambda r: r["year"])
     clusters = []
     for r in dated:
-        if clusters and r["year"] - clusters[-1][-1]["year"] <= YEAR_TOLERANCE:
+        if clusters and r["year"] - clusters[-1][0]["year"] <= YEAR_TOLERANCE:
             clusters[-1].append(r)
         else:
             clusters.append([r])
@@ -131,6 +143,9 @@ def resolve_rows():
     rows = pd.read_parquet(WIKI / "rows.parquet")
     pages = load_jsonl(WIKI / "pages.jsonl", "key")
     facts = load_jsonl(WIKI / "wikidata.jsonl", "qid")
+    if (WIKI / "creators.jsonl").exists():  # directors and authors, fetched separately
+        for qid, extra in load_jsonl(WIKI / "creators.jsonl", "qid").items():
+            facts.setdefault(qid, {}).update({k: v for k, v in extra.items() if k != "qid"})
     wikiplots = (DATASETS / "wikiplots/titles").read_text(encoding="utf-8").splitlines()
 
     def page_of(key):
@@ -150,11 +165,46 @@ def resolve_rows():
     rows.loc[is_wp, "year"] = rows[is_wp].uid.map(lambda u: tag_year(wikiplots[int(u.split(":")[1])].strip()))
     # WikiPlots rows with no medium tag are kept only if Wikidata says film or novel.
     unknown = rows.medium == "unknown"
+    rows["untagged"] = unknown
     rows.loc[unknown, "medium"] = rows.loc[unknown, "wd_type"]
     rows = rows[rows.medium.isin(["film", "novel"])].copy()
     rows["type_conflict"] = rows.wd_type.isin(["film", "novel"]) & (rows.wd_type != rows.medium)
+    rows["page_qid"] = rows.qid
+    rows["qid"] = [q if isinstance(q, str) and t == m else None
+                   for q, t, m in zip(rows.qid, rows.wd_type, rows.medium)]
+    rows["title"] = [t if isinstance(t, str) and t.strip() else strip_tag(p)
+                     for t, p in zip(rows.title, rows.page_title)]
     rows["key"] = rows.title.map(normalize_title)
+    rows = drop_collection_matches(rows)
     return rows, facts
+
+
+def collection_mismatches(keys, sources, page_key):
+    """Which rows of one Wikidata item were only redirected to it.
+
+    `keys` are the rows' normalized titles, `sources` where each row came from.
+    Different titles from different sources are normal (alternate titles), so those
+    rows stay. But one source never lists a single work under two titles: when it
+    does here, the page is a series or collection, and the rows whose title differs
+    from the page's don't belong to it.
+    """
+    per_source = {}
+    for key, source in zip(keys, sources):
+        per_source.setdefault(source, set()).add(key)
+    if all(len(titles) <= 1 for titles in per_source.values()):
+        return [False] * len(keys)
+    return [k != page_key for k in keys]
+
+
+def drop_collection_matches(rows):
+    rows = rows.copy()
+    rows["page_key"] = rows.page_title.map(lambda t: normalize_title(strip_tag(t)))
+    stray = pd.Series(False, index=rows.index)
+    for _, group in rows[rows.qid.notna()].groupby(["qid", "medium"]):
+        stray.loc[group.index] = collection_mismatches(list(group.key), list(group.source), group.page_key.iloc[0])
+    rows.loc[stray, "qid"] = None
+    # An untagged WikiPlots row took its medium from the page; without the page it has none.
+    return rows[~(stray & rows.untagged)].copy()
 
 
 def build_work(work_id, group, facts):
@@ -170,7 +220,9 @@ def build_work(work_id, group, facts):
         "source_years": sorted({int(y) for y in group.year.dropna()}),
         "words": int(best.words), "text_uid": best.uid, "uids": list(group.uid),
         "sources": sorted(set(group.source)), "n_versions": len(group),
-        "creators": sorted({c for cs in group.creators for c in cs}),
+        "creators": sorted({c for cs in group.creators for c in cs} |
+                           {v["label"] for prop in ("P57", "P50") for v in wd.get(prop, [])
+                            if isinstance(v, dict) and v.get("label")}),
         "source_genres": sorted({g for gs in group.genres for g in gs}),
         "wd_genres": labels("P136"), "wd_types": labels("P31"),
         "sitelinks": wd.get("sitelinks"), "imdb_id": next(iter(wd.get("P345", [])), None),
@@ -183,9 +235,11 @@ def build_work(work_id, group, facts):
 
 def main():
     rows, facts = resolve_rows()
-    work_of = assign_works(rows[["uid", "medium", "qid", "key", "year", "source"]]
-                           .assign(year=lambda d: d.year.astype(object).where(d.year.notna(), None))
-                           .to_dict("records"))
+    # pandas stores a missing string or year as NaN, which is truthy; pass real None instead.
+    records = [{"uid": r.uid, "medium": r.medium, "source": r.source, "key": r.key,
+                "qid": r.qid if isinstance(r.qid, str) else None,
+                "year": None if pd.isna(r.year) else int(r.year)} for r in rows.itertuples()]
+    work_of = assign_works(records)
     rows["work_id"] = rows.uid.map(work_of)
     works = pd.DataFrame([build_work(w, g, facts) for w, g in rows.groupby("work_id", sort=False)])
     works["year"] = works.year.astype("Int64")
@@ -205,7 +259,9 @@ def report(rows, works):
               f" year from Wikidata: {(w.year_source == 'wikidata').sum():,}")
         print(f"  versions per work: {dict(sorted(Counter(w.n_versions).items()))}")
         print(f"  Wikidata genre present: {(w.wd_genres.map(len) > 0).sum():,}")
-        print(f"  Wikidata type disagrees with source medium: {w.type_conflict.sum():,}")
+        print(f"  rows whose page is the other medium's item: {int(r.type_conflict.sum()):,};"
+              f" rows whose page is a list, series, author or missing: "
+              f"{int((r.qid.isna() & ~r.type_conflict).sum()):,}")
     far = works[works.apply(lambda w: w.year_source == "wikidata" and
                             any(abs(y - w.year) > YEAR_TOLERANCE for y in w.source_years), axis=1)]
     print(f"\nworks whose source year differs from Wikidata's by more than 1: {len(far):,}")

@@ -35,6 +35,8 @@ We'll go one step at a time, and I'll follow one film through the whole pipeline
 
 **Chore 1: one entry per work.** The same film often appears three or four times across collections. Brick shows up in several. We merge the copies, keep the longest summary, and end up with roughly 25.6k films and 8.7k novels.
 
+> **Correction (2026-11-10, after doing the step):** Brick has only one long summary in our sources (the CMU collection's, 642 words); "shows up in several" was wrong. And the real dedupe gives **26,681 films and 10,894 novels**, more than the rough count, because about 15k untagged WikiPlots summaries could now be identified as films or novels.
+
 **Chore 2: a year for each work.** Most have one. About 2.4k films and 3.4k novels don't. Undated works can still be used in the test that doesn't involve time (step 2 explains), so nothing gets thrown away.
 
 **Chore 3: genre labels.** This is the hard one. The collections' own labels are unusable: three different schemes, and badly incomplete (only 185 films labeled gangster). So we relabel everything against our own list: 7 families, 44 genres, 217 subgenres. Brick should come out as noir and teen/high school, both marked *core*.
@@ -135,6 +137,20 @@ Written into `research-plan.md` on 2026-11-10:
 3. **The draft for the 150 works** is the three methods' labels pooled, with no sign of which method suggested which (2.3).
 4. **The subgenre merging rule has two parts** (2.3): against the answer key where there are at least 5 examples; between the two best automatic methods across the whole corpus for the rest.
 5. The three proposed numbers (90% coverage, the 2-point tie, κ below 0.4) were reviewed and stand.
+
+### Doing the step (2026-11-10)
+
+Scott chose to do step 1 before walking through the rest, so the ideas get reinforced in practice. What happened:
+
+- **The project went public first.** It's at `github.com/i-am-move-37/story-atlas`. The first commit holds the plan as it stood, so the pilot's rules are timestamped before its results.
+- **Matching.** Every long summary was matched to its Wikipedia page and its Wikidata entry (the structured database behind Wikipedia). 67,756 page lookups; about 530 pages no longer exist.
+- **The dedupe took four tries.** Merging "everything that points to the same Wikidata entry" was too simple:
+  - Some old pages now redirect to a list or a series page. 290 Tom and Jerry shorts became one "work," because all their pages now point to the filmography. *Fix:* an entry only identifies a work if Wikidata says it is itself a film or a novel.
+  - A novel's page sometimes redirects to its film adaptation. *Fix:* the entry must be the same medium as the summary.
+  - Several different titles from one source landing on one page means that page is a series (11 Judge Dredd storylines). *Fix:* those rows are split off again.
+  - A plain programming bug lumped all unmatched rows together. *Fix:* found by reading the report, which claimed "100% matched."
+- **Result:** 72,577 summaries became 37,575 works: 26,681 films and 10,894 novels. 98% of films and 88% of novels have a year (novels were 60% before). From 2005 on: 9.9k films and 2.1k novels.
+- **The lesson for later steps:** the report after each run is what caught every one of these. None showed up as an error.
 
 ---
 

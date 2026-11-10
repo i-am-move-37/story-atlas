@@ -1,4 +1,4 @@
-from build_works import assign_works, normalize_title, pick_year, tag_year
+from build_works import assign_works, collection_mismatches, normalize_title, pick_year, strip_tag, tag_year
 
 
 def row(uid, title, medium="film", qid=None, year=None, source="wikiplots"):
@@ -68,3 +68,38 @@ def test_pick_year_prefers_wikidata_then_earliest_source_year():
     assert pick_year(1979, [1979, 1980]) == (1979, "wikidata")
     assert pick_year(None, [1980, None, 1979]) == (1979, "source")
     assert pick_year(None, [None]) == (None, None)
+
+
+def test_unmatched_rows_do_not_chain_across_consecutive_years():
+    works = assign_works([row("a", "Hamlet", year=1990, source="cmu_movie"),
+                          row("b", "Hamlet", year=1991, source="wiki_movie_plots"),
+                          row("c", "Hamlet", year=1992, source="cmu_movie")])
+    assert works["a"] == works["b"]
+    assert works["c"] != works["a"]
+
+
+def test_rows_without_a_title_never_merge():
+    works = assign_works([row("a", None, year=1950, source="cmu_movie"),
+                          row("b", None, year=1950, source="cmu_movie")])
+    assert works["a"] != works["b"]
+
+
+def test_strip_tag_removes_the_wikipedia_disambiguator():
+    assert strip_tag("Alien (1979 film)") == "Alien"
+    assert strip_tag("Brick") == "Brick"
+    assert strip_tag(None) is None
+
+
+def test_pick_year_ignores_impossible_wikidata_years():
+    assert pick_year(6760, [1999]) == (1999, "source")
+    assert pick_year(2021, [None]) == (None, None)
+
+
+def test_alternate_titles_from_different_sources_stay_together():
+    keys, sources = ["amelie", "fabuleux destin d amelie poulain"], ["cmu_movie", "wikiplots"]
+    assert collection_mismatches(keys, sources, "amelie") == [False, False]
+
+
+def test_rows_one_source_redirects_to_a_series_page_are_marked():
+    keys = ["judge dredd", "doomsday scenario", "apocalypse war"]
+    assert collection_mismatches(keys, ["wikiplots"] * 3, "judge dredd") == [False, True, True]
