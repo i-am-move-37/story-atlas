@@ -1,5 +1,5 @@
 from genres import load_scheme
-from label_pilot import clean_labels, labels_from_wikidata, scheme_text, valid_ids
+from label_pilot import clean_labels, labels_from_wikidata, pooled_draft, scheme_text, valid_ids
 
 VALID = {"noir", "noir/neo-noir", "western"}
 
@@ -30,3 +30,22 @@ def test_scheme_text_names_every_id():
     scheme = load_scheme()
     text = scheme_text(scheme)
     assert all(i in text for i in valid_ids(scheme))
+
+
+def test_pooled_draft_is_the_union_in_scheme_order_with_no_trace_of_the_method():
+    order = ["noir", "noir/neo-noir", "western"]
+    methods = {"wikidata": [{"id": "western", "level": "core"}],
+               "metadata": None,
+               "plot": [{"id": "noir/neo-noir", "level": "borderline"}, {"id": "western", "level": "core"}]}
+    assert pooled_draft(methods, order) == ["noir/neo-noir", "western"]
+
+
+def test_pooled_draft_is_the_same_whichever_method_gave_the_label():
+    order = ["noir", "western"]
+    a = {"wikidata": [{"id": "western", "level": "core"}], "metadata": None, "plot": [{"id": "noir", "level": "core"}]}
+    b = {"wikidata": [{"id": "noir", "level": "core"}], "metadata": None, "plot": [{"id": "western", "level": "core"}]}
+    assert pooled_draft(a, order) == pooled_draft(b, order)
+
+
+def test_pooled_draft_is_empty_when_no_method_answers():
+    assert pooled_draft({"wikidata": None, "metadata": None, "plot": []}, ["noir"]) == []

@@ -6,7 +6,8 @@
 
 Output: data/pilot/methods.json  {pilot_id: {method: [{id, level}] or None}}
         docs/wikidata-genre-crosswalk.json  {Wikidata genre label: [our ids]}
-Usage: uv run scripts/label_pilot.py crosswalk | methods
+        data/pilot/upload/pNNN.json  the 150 draft-mode works with their pooled draft
+Usage: uv run scripts/label_pilot.py crosswalk | methods | drafts
 """
 
 import argparse
@@ -102,6 +103,18 @@ def labels_from_wikidata(wd_genres, crosswalk):
             if i not in ids:
                 ids.append(i)
     return [{"id": i, "level": "core"} for i in ids]
+
+
+def scheme_order(scheme):
+    """Every id in the order the scheme lists it: each genre, then its subgenres."""
+    return [i for f in scheme for g in f["genres"]
+            for i in [g["id"]] + [sub["id"] for sub in g["subgenres"]]]
+
+
+def pooled_draft(methods, order):
+    """Every id any method gave, in scheme order, so nothing shows which method gave it."""
+    pool = {label["id"] for labels in methods.values() for label in labels or []}
+    return [i for i in order if i in pool]
 
 
 def metadata_prompt(work):
@@ -223,7 +236,40 @@ def run_methods():
         print(f"{method}: gives an answer for {covered}/{len(results)} works")
 
 
+def current_scope(sample, works):
+    """Scope of each pilot work in today's works table, matched on its summary's uid."""
+    by_uid = {uid: w.scope for w in works.itertuples() for uid in w.uids}
+    return {r.pilot_id: by_uid.get(r.text_uid) for r in sample.itertuples()}
+
+
+def build_drafts():
+    """Write one upload file per draft-mode work that is in scope, with its pooled draft."""
+    order = scheme_order(load_scheme())
+    methods = json.loads((PILOT / "methods.json").read_text(encoding="utf-8"))
+    sample = pd.read_parquet(PILOT / "sample.parquet")
+    scope = current_scope(sample, pd.read_parquet(ROOT / "data" / "works.parquet"))
+    out = PILOT / "upload"
+    out.mkdir(exist_ok=True)
+    for old in out.glob("p*.json"):
+        old.unlink()
+    left_out, sizes = [], []
+    for r in sample[sample["mode"] == "draft"].itertuples():
+        if scope[r.pilot_id] != "in":
+            left_out.append((r.pilot_id, r.title, scope[r.pilot_id] or "not in the works table"))
+            continue
+        doc = json.loads((PILOT / "docs" / f"{r.pilot_id}.json").read_text(encoding="utf-8"))
+        doc["draft"] = pooled_draft(methods[r.pilot_id], order)
+        sizes.append(len(doc["draft"]))
+        (out / f"{r.pilot_id}.json").write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")
+    print(f"drafts written: {len(sizes)}; mean suggestions {sum(sizes) / len(sizes):.1f}; "
+          f"with none {sizes.count(0)}; most {max(sizes)}")
+    print(f"left out ({len(left_out)}):")
+    for pilot_id, title, why in left_out:
+        print(f"  {pilot_id}  {title}  [{why}]")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("step", choices=["crosswalk", "methods"])
-    {"crosswalk": build_crosswalk, "methods": run_methods}[parser.parse_args().step]()
+    parser.add_argument("step", choices=["crosswalk", "methods", "drafts"])
+    {"crosswalk": build_crosswalk, "methods": run_methods,
+     "drafts": build_drafts}[parser.parse_args().step]()

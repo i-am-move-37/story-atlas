@@ -121,7 +121,7 @@ header.top h1 { font-size: 20px; font-weight: 600; margin: 0; }
       <li><b>Core</b> means the work plainly belongs to that tradition. <b>Borderline</b> means a defensible stretch, like calling Brick a neo-western.</li>
       <li><b>A mix of two genres is two labels.</b> A science fiction western gets science fiction and western. Romantic comedy is the one exception.</li>
       <li><b>Plain dramas and comedies may fit nothing.</b> Tick "No genre in the list fits" rather than forcing a label.</li>
-      <li>The first 50 works start from a blank page. The other 150 arrive with suggested labels to confirm, change or remove.</li>
+      <li>The first 50 works start from a blank page. The rest arrive with suggested labels to confirm, change or remove.</li>
     </ul>
   </details>
 
@@ -163,7 +163,10 @@ header.top h1 { font-size: 20px; font-weight: 600; margin: 0; }
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
   var state = { db: null, scheme: [], names: {}, works: [], labels: {}, current: null,
-                edit: { labels: [], note: "", nofit: false }, open: {}, query: "", worksLoaded: false };
+                edit: { labels: [], note: "", nofit: false }, open: {}, query: "", worksLoaded: false,
+                labelsLoaded: false,  // the store has confirmed the saved labels (not just a cached copy)
+                touched: false,       // the open work has been edited since it was opened
+                hadSaved: false };    // the open work had saved labels when it was opened
   var writes = {};     // one write at a time per document
   var saveTimer = null;
 
@@ -196,6 +199,7 @@ header.top h1 { font-size: 20px; font-weight: 600; margin: 0; }
   function open(work) {
     state.current = work;
     var saved = work ? state.labels[work.id] : null;
+    state.touched = false; state.hadSaved = !!saved;
     if (saved) {
       state.edit = { labels: (saved.labels || []).map(function (l) { return { id: l.id, level: l.level }; }),
                      note: saved.note || "", nofit: !!saved.nofit };
@@ -226,6 +230,7 @@ header.top h1 { font-size: 20px; font-weight: 600; margin: 0; }
   function saveSoon() {
     if (!state.current) return;
     var work = state.current;
+    state.touched = true;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () {
       if (state.current !== work) return;
@@ -413,15 +418,28 @@ header.top h1 { font-size: 20px; font-weight: 600; margin: 0; }
   // ---------- start ----------
   function start(db) {
     state.db = db;
-    var slow = setTimeout(function () { if (!state.worksLoaded) notice("The works can't be reached yet. Still trying…"); }, 10000);
+    var slow = setTimeout(function () {
+      if (!state.worksLoaded || !state.labelsLoaded) notice("The works and saved labels can't be reached yet. Still trying…");
+    }, 10000);
+    // Nothing opens until the store has confirmed the saved labels. A work opened from a
+    // stale cached copy shows an empty desk, and the next change would save over what's stored.
+    function firstOpen() {
+      if (state.current || !state.worksLoaded || !state.labelsLoaded) return;
+      var w = firstUndone() || queue()[0];
+      if (w) { notice(""); open(w); }
+    }
     db.collection("pilot_labels").limit(1000).onSnapshot(function (snap) {
       snap.docs.forEach(function (d) { state.labels[d.id] = d.data(); });
+      if (!(snap.metadata && snap.metadata.fromCache)) state.labelsLoaded = true;
       renderProgress();
-      if (!state.current && state.worksLoaded) { var w = firstUndone() || queue()[0]; if (w) open(w); }
+      firstOpen();
+      // Saved labels that arrive after their work was opened replace the empty desk,
+      // unless editing has already begun.
+      var cur = state.current;
+      if (cur && !state.touched && !state.hadSaved && state.labels[cur.id]) open(cur);
     }, function (e) { notice("Lost the connection to saved labels (" + e.code + "). Reload the page to continue."); });
     db.collection("pilot_works").limit(1000).onSnapshot(function (snap) {
       if (snap.metadata.fromCache && snap.empty) return;
-      clearTimeout(slow);
       state.worksLoaded = true;
       state.works = snap.docs.map(function (d) { var w = Object.assign({ id: d.id }, d.data()); return w; })
         .sort(function (a, b) { return a.order - b.order; });
@@ -431,7 +449,7 @@ header.top h1 { font-size: 20px; font-weight: 600; margin: 0; }
         var same = state.works.filter(function (w) { return w.id === state.current.id; })[0];
         if (same) state.current = same;
         renderProgress(); renderDesk();
-      } else { open(firstUndone() || queue()[0] || null); }
+      } else { renderProgress(); firstOpen(); }
     }, function (e) { clearTimeout(slow); notice("The works couldn't be loaded (" + e.code + "). Reload the page to try again."); });
   }
 
