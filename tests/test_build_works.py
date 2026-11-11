@@ -1,4 +1,4 @@
-from build_works import assign_works, shortest_runtime, collection_mismatches, normalize_title, pick_year, strip_tag, tag_year
+from build_works import assign_works, shortest_runtime, collection_mismatches, normalize_title, pick_year, strip_tag, tag_year, title_lacks_medium
 
 
 def row(uid, title, medium="film", qid=None, year=None, source="wikiplots"):
@@ -109,3 +109,9 @@ def test_shortest_runtime_takes_the_minimum_and_ignores_junk():
     assert shortest_runtime([7.0, None], ["8", "abc"]) == 7.0
     assert shortest_runtime([float("nan")], ["5400"]) is None  # seconds, not minutes
     assert shortest_runtime([], []) is None
+
+
+def test_a_title_lacks_its_medium_with_no_tag_or_with_a_tag_we_could_not_read():
+    assert title_lacks_medium("Brick", "film")
+    assert title_lacks_medium("Out of My Mind (Draper novel)", "unknown")
+    assert not title_lacks_medium("Alien (1979 film)", "film")

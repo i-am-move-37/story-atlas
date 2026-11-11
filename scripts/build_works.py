@@ -51,6 +51,12 @@ def tag_year(raw_title):
     return int(y.group(1)) if y else None
 
 
+def title_lacks_medium(raw_title, medium):
+    """True when a WikiPlots title doesn't itself say film or novel: it has no tag
+    ("Brick"), or a tag we couldn't read ("Out of My Mind (Draper novel)")."""
+    return medium == "unknown" or not TAG_RE.match(raw_title or "")
+
+
 def strip_tag(page_title):
     """'Alien (1979 film)' -> 'Alien'; None stays None."""
     if not isinstance(page_title, str):
@@ -187,12 +193,13 @@ def resolve_rows():
     rows["runtime"] = rows.uid.map(cmu_runtimes())
     is_wp = rows.source == "wikiplots"
     rows.loc[is_wp, "year"] = rows[is_wp].uid.map(lambda u: tag_year(wikiplots[int(u.split(":")[1])].strip()))
-    # A WikiPlots title with no tag ("Brick", not "Brick (film)") had its medium guessed
-    # from other sources' titles, or left unknown. The plot comes from that page, so
-    # Wikidata's type for the page decides: The Iceman Cometh is the play, though a film
-    # shares its title. With no Wikidata type, a guess is kept and an unknown is dropped.
+    # A WikiPlots title that doesn't say its medium had it guessed from other sources'
+    # titles, or left unknown. The plot comes from that page, so Wikidata's type for the
+    # page decides: The Iceman Cometh is the play, though a film shares its title.
+    # With no Wikidata type, a guess is kept and an unknown is dropped.
     raw_title = rows.uid.map(lambda u: wikiplots[int(u.split(":")[1])].strip() if u.startswith("wikiplots:") else "")
-    rows["untagged"] = is_wp & ~raw_title.map(lambda t: bool(TAG_RE.match(t)))
+    lacks = pd.Series([title_lacks_medium(t, m) for t, m in zip(raw_title, rows.medium)], index=rows.index)
+    rows["untagged"] = is_wp & lacks
     typed = rows.untagged & rows.wd_type.isin(["film", "novel"])
     rows.loc[typed, "medium"] = rows.loc[typed, "wd_type"]
     rows = rows[rows.medium.isin(["film", "novel"])].copy()
