@@ -18,6 +18,7 @@ from pathlib import Path
 import duckdb
 import pandas as pd
 
+from scope import film_scope, novel_scope
 from wiki_ids import classify_type, earliest_year
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -138,14 +139,36 @@ def load_jsonl(path, field):
         return {r[field]: r for r in map(json.loads, f)}
 
 
+def cmu_runtimes():
+    """{uid: runtime in minutes} for CMU film rows that record one."""
+    meta = pd.read_csv(DATASETS / "cmu-movie-summaries/MovieSummaries/movie.metadata.tsv", sep="	",
+                       header=None, usecols=[0, 5], names=["wiki_id", "runtime"], dtype=str)
+    meta["runtime"] = pd.to_numeric(meta.runtime, errors="coerce")
+    meta = meta.dropna().drop_duplicates("wiki_id")
+    return {f"cmu_movie:{w}": r for w, r in zip(meta.wiki_id, meta.runtime)}
+
+
+def shortest_runtime(source_runtimes, wikidata_durations):
+    """Shortest plausible runtime in minutes from the sources and Wikidata, or None."""
+    values = [float(v) for v in source_runtimes if v is not None and not pd.isna(v)]
+    for v in wikidata_durations:
+        try:
+            values.append(float(v))
+        except (TypeError, ValueError):
+            continue
+    values = [v for v in values if 1 <= v <= 600]
+    return min(values) if values else None
+
+
 def resolve_rows():
     """Candidate rows joined to their page, Wikidata facts, text and source year."""
     rows = pd.read_parquet(WIKI / "rows.parquet")
     pages = load_jsonl(WIKI / "pages.jsonl", "key")
     facts = load_jsonl(WIKI / "wikidata.jsonl", "qid")
-    if (WIKI / "creators.jsonl").exists():  # directors and authors, fetched separately
-        for qid, extra in load_jsonl(WIKI / "creators.jsonl", "qid").items():
-            facts.setdefault(qid, {}).update({k: v for k, v in extra.items() if k != "qid"})
+    for name in ("creators", "forms"):  # properties fetched in separate passes
+        if (WIKI / f"{name}.jsonl").exists():
+            for qid, extra in load_jsonl(WIKI / f"{name}.jsonl", "qid").items():
+                facts.setdefault(qid, {}).update({k: v for k, v in extra.items() if k != "qid"})
     wikiplots = (DATASETS / "wikiplots/titles").read_text(encoding="utf-8").splitlines()
 
     def page_of(key):
@@ -161,6 +184,7 @@ def resolve_rows():
         lambda q: classify_type([v.get("label") for v in facts.get(q, {}).get("P31", [])]) if q else None)
     extra = duckdb.sql(f"select uid, year, words, genres, creators from '{SUMMARIES}'").df()
     rows = rows.merge(extra, on="uid", how="left")
+    rows["runtime"] = rows.uid.map(cmu_runtimes())
     is_wp = rows.source == "wikiplots"
     rows.loc[is_wp, "year"] = rows[is_wp].uid.map(lambda u: tag_year(wikiplots[int(u.split(":")[1])].strip()))
     # WikiPlots rows with no medium tag are kept only if Wikidata says film or novel.
@@ -214,6 +238,8 @@ def build_work(work_id, group, facts):
     best = group.sort_values("words", ascending=False).iloc[0]
     year, year_source = pick_year(earliest_year(wd.get("P577", []) or wd.get("P571", [])), group.year)
     labels = lambda prop: [v["label"] for v in wd.get(prop, []) if isinstance(v, dict) and v.get("label")]
+    page = own_page_facts(group, facts) if qid is None else {}
+    page_labels = lambda prop: [v["label"] for v in page.get(prop, []) if isinstance(v, dict) and v.get("label")]
     record = {
         "work_id": work_id, "qid": qid, "medium": best.medium, "title": best.title,
         "page_title": best.page_title, "year": year, "year_source": year_source,
@@ -224,13 +250,32 @@ def build_work(work_id, group, facts):
                            {v["label"] for prop in ("P57", "P50") for v in wd.get(prop, [])
                             if isinstance(v, dict) and v.get("label")}),
         "source_genres": sorted({g for gs in group.genres for g in gs}),
-        "wd_genres": labels("P136"), "wd_types": labels("P31"),
+        "wd_genres": labels("P136"), "wd_types": labels("P31"), "wd_forms": labels("P7937"),
+        "runtime": shortest_runtime(group.runtime, wd.get("P2047", []) + page.get("P2047", [])),
+        "page_types": page_labels("P31"),
         "sitelinks": wd.get("sitelinks"), "imdb_id": next(iter(wd.get("P345", [])), None),
         "type_conflict": bool(group.type_conflict.any()),
     }
     for prop, name in LINK_PROPS.items():
         record[name] = [v["id"] for v in wd.get(prop, []) if isinstance(v, dict)]
+    # A work with no usable Wikidata item can still have a page of its own that says what
+    # it is (a play, a poem). Those facts are used for scope only.
+    types = record["wd_types"] + record["page_types"]
+    record["scope"] = (film_scope(types, record["runtime"]) if record["medium"] == "film"
+                       else novel_scope(types, record["wd_forms"] + page_labels("P7937"),
+                                        record["wd_genres"] + page_labels("P136"),
+                                        record["source_genres"]))
     return record
+
+
+def own_page_facts(group, facts):
+    """Wikidata facts of the page a row points to, when that page is about this work.
+
+    Rows redirected to a series or collection page (their title differs from the
+    page's) don't count: the page describes the collection, not the work.
+    """
+    own = group[group.page_qid.notna() & (group.key == group.page_key)]
+    return facts.get(own.page_qid.iloc[0], {}) if len(own) else {}
 
 
 def main():

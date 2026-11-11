@@ -64,6 +64,10 @@ Among films released 2005–2017, the more unavailable a film's atoms were at re
 ### 2.1 Corpus
 - **Works:** films and novels whose plot summaries run 300+ words, from CMU Movie Summaries, Wikipedia Movie Plots, WikiPlots and CMU Book Summaries. TMDB overviews are too short to qualify.
 - **Deduplication:** copies of the same work across sources merge into one work. The longest summary is kept as the source text, and the earliest reliable year becomes the work's year. **Versions are not merged into one longer summary** (considered 2026-11-10): the copies are mostly snapshots of the same Wikipedia article, stitching them would need an LLM at the foundation, and famous works have more copies, so merging would give them richer inputs. The summary-stability check (6.2) shows whether that should be revisited. A rough title-and-year dedupe gives about 25.6k films and 8.7k novels (2026-11-04); the real dedupe also uses Wikipedia/Wikidata IDs.
+- **Scope: feature films and novels (added 2026-11-10, from the labeling pilot).** Scott's blank-page 50 turned up a Bugs Bunny short, a book of the Bible, a Shakespeare play and a work by Freud.
+  - **Films are features only** (decided by Scott, 2026-11-10): 40 minutes or longer, the Academy's line. Shorts are identified by Wikidata's type, by runtime, and by pages that are filmographies of shorts. Reasons: a gag cartoon doesn't have the story shape the ten facets describe, and about a thousand shorts concentrated in the 1930s–50s would distort those decades' genre histories.
+  - **Novels are narrative prose fiction** *(proposed; rule and counts to be signed off)*: scripture, non-fiction, philosophy, plays, poetry and comics are out.
+  - Works stay in the table with the reason they're out of scope, so the filter can be audited. Out-of-scope works in the pilot sample are left out of the scoring.
 - **Dates:** WikiPlots years are recovered from title tags ("(1979 film)") and from matches to other sources. Undated works (about 2.4k films and 3.4k novels on the rough count) are used in the random split only.
 
 ### 2.2 Length drift

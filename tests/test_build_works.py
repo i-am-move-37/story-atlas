@@ -1,4 +1,4 @@
-from build_works import assign_works, collection_mismatches, normalize_title, pick_year, strip_tag, tag_year
+from build_works import assign_works, shortest_runtime, collection_mismatches, normalize_title, pick_year, strip_tag, tag_year
 
 
 def row(uid, title, medium="film", qid=None, year=None, source="wikiplots"):
@@ -103,3 +103,9 @@ def test_alternate_titles_from_different_sources_stay_together():
 def test_rows_one_source_redirects_to_a_series_page_are_marked():
     keys = ["judge dredd", "doomsday scenario", "apocalypse war"]
     assert collection_mismatches(keys, ["wikiplots"] * 3, "judge dredd") == [False, True, True]
+
+
+def test_shortest_runtime_takes_the_minimum_and_ignores_junk():
+    assert shortest_runtime([7.0, None], ["8", "abc"]) == 7.0
+    assert shortest_runtime([float("nan")], ["5400"]) is None  # seconds, not minutes
+    assert shortest_runtime([], []) is None

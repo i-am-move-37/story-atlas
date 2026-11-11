@@ -10,7 +10,7 @@ Output (data/wiki/):
   wikidata.jsonl  one record per Wikidata item
   rows.parquet    uid -> lookup key, for every candidate row
 
-Usage: uv run scripts/wiki_ids.py pages | wikidata | creators
+Usage: uv run scripts/wiki_ids.py pages | wikidata | creators | forms
 """
 
 import argparse
@@ -64,6 +64,7 @@ PROPS = ["P31", "P577", "P571", "P136", "P144", "P179", "P155", "P156", "P4969",
          "P345", "P495", "P364"]
 
 CREATOR_PROPS = ["P57", "P50"]  # director, author
+FORM_PROPS = ["P7937", "P2047"]  # form of creative work, duration
 
 FILM_WORD = re.compile(r"\bfilm\b")
 NOT_A_FILM = re.compile(r"film (series|franchise|trilogy|festival|award|genre|score|studio)")
@@ -290,22 +291,33 @@ def wikidata_pass():
     run_batches(chunks(qids, SPARQL_BATCH), work, path, "wikidata")
 
 
-def creators_pass():
-    """Directors (P57) and authors (P50), kept apart from the main facts file."""
+def extra_pass(name, prop_ids):
+    """Fetch more properties for every matched item into data/wiki/<name>.jsonl."""
     pages = load_jsonl(OUT / "pages.jsonl", "key")
-    path = OUT / "creators.jsonl"
+    path = OUT / f"{name}.jsonl"
     done = load_jsonl(path, "qid")
     qids = sorted({p["qid"] for p in pages.values() if p.get("qid")} - set(done))
 
     def work(batch):
-        found = lookup_wikidata(batch, prop_ids=CREATOR_PROPS, sitelinks=False)
+        found = lookup_wikidata(batch, prop_ids=prop_ids, sitelinks=False)
         return [{"qid": q, **facts} for q, facts in found.items()]
 
-    run_batches(chunks(qids, SPARQL_BATCH), work, path, "creators")
+    run_batches(chunks(qids, SPARQL_BATCH), work, path, name)
+
+
+def creators_pass():
+    """Directors (P57) and authors (P50)."""
+    extra_pass("creators", CREATOR_PROPS)
+
+
+def forms_pass():
+    """Form of creative work (P7937: novel, play, poem...) and duration (P2047, minutes)."""
+    extra_pass("forms", FORM_PROPS)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("step", choices=["pages", "wikidata", "creators"])
-    step = parser.parse_args().step
-    sys.exit({"pages": pages_pass, "wikidata": wikidata_pass, "creators": creators_pass}[step]())
+    steps = {"pages": pages_pass, "wikidata": wikidata_pass, "creators": creators_pass,
+             "forms": forms_pass}
+    parser.add_argument("step", choices=list(steps))
+    sys.exit(steps[parser.parse_args().step]())
