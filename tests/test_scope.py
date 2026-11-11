@@ -43,3 +43,8 @@ def test_non_fiction_is_not_a_sign_of_fiction():
     assert not has_fiction_sign(["Non-fiction"])
     assert has_fiction_sign(["Science Fiction"])
     assert has_fiction_sign(["children's literature"])
+
+
+def test_short_stories_stay_and_collections_go():
+    assert novel_scope(["literary work"], ["short story"], [], []) == "in"
+    assert novel_scope(["literary work"], ["short story collection", "short story"], [], []) == "collection"

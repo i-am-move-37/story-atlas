@@ -187,10 +187,14 @@ def resolve_rows():
     rows["runtime"] = rows.uid.map(cmu_runtimes())
     is_wp = rows.source == "wikiplots"
     rows.loc[is_wp, "year"] = rows[is_wp].uid.map(lambda u: tag_year(wikiplots[int(u.split(":")[1])].strip()))
-    # WikiPlots rows with no medium tag are kept only if Wikidata says film or novel.
-    unknown = rows.medium == "unknown"
-    rows["untagged"] = unknown
-    rows.loc[unknown, "medium"] = rows.loc[unknown, "wd_type"]
+    # A WikiPlots title with no tag ("Brick", not "Brick (film)") had its medium guessed
+    # from other sources' titles, or left unknown. The plot comes from that page, so
+    # Wikidata's type for the page decides: The Iceman Cometh is the play, though a film
+    # shares its title. With no Wikidata type, a guess is kept and an unknown is dropped.
+    raw_title = rows.uid.map(lambda u: wikiplots[int(u.split(":")[1])].strip() if u.startswith("wikiplots:") else "")
+    rows["untagged"] = is_wp & ~raw_title.map(lambda t: bool(TAG_RE.match(t)))
+    typed = rows.untagged & rows.wd_type.isin(["film", "novel"])
+    rows.loc[typed, "medium"] = rows.loc[typed, "wd_type"]
     rows = rows[rows.medium.isin(["film", "novel"])].copy()
     rows["type_conflict"] = rows.wd_type.isin(["film", "novel"]) & (rows.wd_type != rows.medium)
     rows["page_qid"] = rows.qid

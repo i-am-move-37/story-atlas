@@ -38,6 +38,7 @@ NOT_PROSE_FICTION_FORMS = {
     "play": "play", "tragedy": "play", "comedy": "play", "poem": "poetry", "epic poem": "poetry",
     "poetry": "poetry", "essay": "non-fiction", "treatise": "non-fiction", "dialogue": "philosophy",
     "comics": "comics", "graphic novel": "comics", "manga": "comics",
+    "short story collection": "collection",
 }
 # Genre labels (Wikidata's or the source's) that point away from prose fiction.
 # They only count when the work carries no sign of being fiction.
@@ -85,6 +86,8 @@ def novel_scope(wd_types, wd_forms, wd_genres, source_genres):
         if t in NOT_PROSE_FICTION_TYPES:
             return NOT_PROSE_FICTION_TYPES[t]
     forms = _lower(wd_forms)
+    if "short story collection" in forms:  # one summary covering several stories
+        return "collection"
     if not any(f in ("novel", "novella", "short story", "novelette") for f in forms):
         for f in forms:
             if f in NOT_PROSE_FICTION_FORMS:
