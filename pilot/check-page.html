@@ -1,0 +1,360 @@
+<title>Genre Label Check</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+/* Layout: a reading column for the work on the left, a sticky list of genres to mark on the right; stacks on a phone. */
+:root {
+  --paper: #f6f7f9; --panel: #ffffff; --ink: #1a2230; --muted: #5b6676; --rule: #d9dee6;
+  --accent: #2f4fa8; --accent-ink: #ffffff; --soft: #e9edf7; --warn: #9a5b00; --warn-soft: #fbf1dc;
+  --ok: #1f6b4a; --bad: #a4372c; --bad-soft: #f8e6e3;
+  --ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --read: "Source Serif 4", Georgia, "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #12161d; --panel: #1a2029; --ink: #e6e9ef; --muted: #9aa5b5; --rule: #2e3745;
+  --accent: #8ea6ee; --accent-ink: #10141b; --soft: #232c3d; --warn: #e3b563; --warn-soft: #3a2f17;
+  --ok: #6fc79d; --bad: #f0958a; --bad-soft: #3d2320; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #12161d; --panel: #1a2029; --ink: #e6e9ef; --muted: #9aa5b5; --rule: #2e3745;
+  --accent: #8ea6ee; --accent-ink: #10141b; --soft: #232c3d; --warn: #e3b563; --warn-soft: #3a2f17;
+  --ok: #6fc79d; --bad: #f0958a; --bad-soft: #3d2320; color-scheme: dark }
+
+body { background: var(--paper); color: var(--ink); font-family: var(--ui); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px 48px; }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 24px; }
+header.top h1 { font-size: 20px; font-weight: 600; margin: 0; }
+.progress { color: var(--muted); font-variant-numeric: tabular-nums; }
+.progress b { color: var(--ink); font-weight: 600; }
+.bar { height: 6px; background: var(--rule); border-radius: 3px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); width: 0; }
+
+.guide { background: var(--soft); border-radius: 8px; padding: 12px 16px; }
+.guide summary { cursor: pointer; font-weight: 600; }
+.guide ul { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; max-width: 75ch; }
+
+.jumplist { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2px 12px; max-height: 40vh; overflow: auto; }
+.jumplist button { width: 100%; text-align: left; border: 0; background: transparent; padding: 4px 6px; border-radius: 4px; display: flex; gap: 8px; align-items: baseline; }
+.jumplist button:hover, .jumplist button.cur { background: var(--panel); }
+.jumplist button.cur { font-weight: 600; }
+.jumplist .st { flex: none; width: 1.2em; color: var(--muted); }
+.jumplist .done .st { color: var(--ok); }
+.jumplist .t { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+.notice { background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 12px 16px; }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); gap: 24px; align-items: start; }
+@media (max-width: 880px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+
+.work { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 20px 24px; min-width: 0; }
+.work .kind { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.work h2 { font-family: var(--read); font-size: 28px; line-height: 1.2; font-weight: 600; margin: 4px 0 6px; text-wrap: balance; }
+.work .meta { color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.work .meta a { color: var(--accent); }
+.work .text { font-family: var(--read); font-size: 17px; line-height: 1.65; max-width: 68ch; margin-top: 16px;
+  display: flex; flex-direction: column; gap: 12px; overflow-wrap: anywhere; }
+.work .text p { margin: 0; }
+
+.desk { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+@media (max-width: 880px) { .desk { position: static; } }
+.desk h3 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 600; }
+
+.items { display: flex; flex-direction: column; gap: 6px; }
+.item { display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--rule); border-radius: 6px; padding: 6px 6px 6px 12px; background: var(--panel); }
+.item.star { border-color: var(--accent); background: var(--soft); }
+.item.wrong { border-color: var(--bad); background: var(--bad-soft); }
+.item .name { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: 500; }
+.item.wrong .name { text-decoration: line-through; color: var(--muted); }
+.item .name small { color: var(--muted); display: block; font-size: 12px; font-weight: 400; text-decoration: none; }
+.mark { border: 1px solid var(--rule); background: transparent; border-radius: 5px; padding: 4px 10px; font-size: 13px; flex: none; }
+.mark.star[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.mark.wrong[aria-pressed="true"] { background: var(--bad); border-color: var(--bad); color: var(--panel); }
+.mark:disabled { opacity: .4; cursor: not-allowed; }
+
+.finish { display: flex; flex-direction: column; gap: 8px; }
+#note { width: 100%; box-sizing: border-box; min-height: 44px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); resize: vertical; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { border: 1px solid var(--rule); background: var(--panel); border-radius: 6px; padding: 8px 14px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.status { color: var(--muted); font-size: 13px; }
+.status.ok { color: var(--ok); }
+.status.bad { color: var(--warn); }
+.hint { color: var(--muted); font-size: 13px; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Genre Label Check</h1>
+    <div class="progress" id="progress">Loading the works…</div>
+  </header>
+  <div class="bar"><i id="bar"></i></div>
+
+  <details class="guide" id="guide" open>
+    <summary>How this works</summary>
+    <ul>
+      <li>These are the 40 works you labeled from a blank page. Each comes with a short list of genres. Some are yours, some came from the labeling methods, and some are decoys nobody suggested. Nothing shows which is which.</li>
+      <li><b>Star the genres that best describe the work:</b> at least one, at most three. Think of what you'd say to tell someone what kind of story it is.</li>
+      <li><b>Mark Wrong only when a genre plainly doesn't fit.</b> If someone could defend it, leave it alone.</li>
+      <li><b>Leave the rest unmarked.</b> Unmarked means "fits more or less" and counts neither for nor against anything.</li>
+      <li>Judge the work itself, not just the summary, as before.</li>
+    </ul>
+  </details>
+
+  <details class="guide" id="jump">
+    <summary>All works: click one to open it</summary>
+    <ol class="jumplist" id="jumplist"></ol>
+  </details>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <div class="cols" id="cols" hidden>
+    <article class="work" id="work"></article>
+
+    <section class="desk" aria-label="Genres to mark">
+      <h3>Genres to mark</h3>
+      <div class="items" id="items"></div>
+      <div class="finish">
+        <textarea id="note" placeholder="Note (optional)"></textarea>
+        <div class="actions">
+          <button class="btn primary" id="done" type="button">Save and next</button>
+          <button class="btn" id="prev" type="button">Previous</button>
+          <button class="btn" id="next" type="button">Next</button>
+        </div>
+        <div class="status" id="status" role="status"></div>
+        <div class="hint">Ctrl+Enter saves and moves on. Your marks are saved each time you change one.</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var MAX_STARS = 3;
+  var $ = function (id) { return document.getElementById(id); };
+  var state = { db: null, names: {}, works: [], marks: {}, current: null,
+                edit: { wrong: [], stars: [], note: "" }, worksLoaded: false,
+                marksLoaded: false,  // the store has confirmed the saved marks (not just a cached copy)
+                touched: false,      // the open work has been edited since it was opened
+                hadSaved: false };   // the open work had saved marks when it was opened
+  var writes = {};     // one write at a time per document
+  var saveTimer = null;
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+  function notice(text) { $("notice").textContent = text; $("notice").hidden = !text; }
+  function setStatus(text, kind) { $("status").textContent = text; $("status").className = "status" + (kind ? " " + kind : ""); }
+
+  function isDone(id) { var m = state.marks[id]; return !!m && m.status === "done"; }
+  function firstUndone() { for (var i = 0; i < state.works.length; i++) if (!isDone(state.works[i].id)) return state.works[i]; return null; }
+
+  function open(work) {
+    state.current = work;
+    var saved = work ? state.marks[work.id] : null;
+    state.touched = false; state.hadSaved = !!saved;
+    state.edit = saved ? { wrong: (saved.wrong || []).slice(), stars: (saved.stars || []).slice(), note: saved.note || "" }
+                       : { wrong: [], stars: [], note: "" };
+    setStatus("");
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- saving ----------
+  function write(id, body) {
+    var ref = state.db.doc("check_marks/" + id);
+    writes[id] = (writes[id] || Promise.resolve()).catch(function () {}).then(function () { return ref.set(body); });
+    return writes[id];
+  }
+  function body(status) {
+    return { wrong: state.edit.wrong.slice(), stars: state.edit.stars.slice(), note: state.edit.note,
+             status: status, updatedAt: new Date().toISOString() };
+  }
+  function saveSoon() {
+    if (!state.current) return;
+    var work = state.current;
+    state.touched = true;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      if (state.current !== work) return;
+      write(work.id, body(isDone(work.id) ? "done" : "in_progress")).then(function () { setStatus("Saved.", "ok"); },
+        function (e) { setStatus("Couldn't save (" + (e && e.code || "error") + "). Your marks are still on screen; change one to retry.", "bad"); });
+    }, 500);
+  }
+  function finish() {
+    var work = state.current;
+    if (!work) return;
+    clearTimeout(saveTimer);
+    var data = body("done");
+    setStatus("Saving…");
+    write(work.id, data).then(function () {
+      state.marks[work.id] = data;
+      var next = firstUndone();
+      if (next) open(next); else { open(work); setStatus("Saved. All 40 are checked.", "ok"); renderProgress(); }
+    }, function (e) {
+      setStatus("Couldn't save (" + (e && e.code || "error") + "). Nothing was lost; press the button again.", "bad");
+    });
+  }
+
+  // ---------- marks ----------
+  function drop(list, id) { var i = list.indexOf(id); if (i >= 0) list.splice(i, 1); return i >= 0; }
+  function toggleStar(id) {
+    if (!drop(state.edit.stars, id)) {
+      if (state.edit.stars.length >= MAX_STARS) return;
+      drop(state.edit.wrong, id); state.edit.stars.push(id);
+    }
+    renderDesk(); saveSoon();
+  }
+  function toggleWrong(id) {
+    if (!drop(state.edit.wrong, id)) { drop(state.edit.stars, id); state.edit.wrong.push(id); }
+    renderDesk(); saveSoon();
+  }
+
+  // ---------- rendering ----------
+  function render() { renderProgress(); renderWork(); renderDesk(); }
+
+  function renderProgress() {
+    var box = $("progress"); box.textContent = "";
+    if (!state.works.length) { box.textContent = state.worksLoaded ? "No works loaded yet." : "Loading the works…"; return; }
+    var done = state.works.filter(function (w) { return isDone(w.id); }).length;
+    box.append("Checked: "); box.append(el("b", null, done + " / " + state.works.length));
+    $("bar").style.width = (100 * done / state.works.length) + "%";
+    var list = $("jumplist"), keep = list.scrollTop;
+    list.textContent = "";
+    state.works.forEach(function (w, i) {
+      var m = state.marks[w.id], status = m ? m.status : "";
+      var b = el("button", (w === state.current ? "cur " : "") + (status === "done" ? "done" : "")); b.type = "button";
+      b.append(el("span", "st", status === "done" ? "✓" : status === "in_progress" ? "…" : "○"));
+      b.append(el("span", "t", (i + 1) + ". " + (w.title || "(untitled)")));
+      b.title = status === "done" ? "Saved" : status === "in_progress" ? "Started, not finished" : "Not started";
+      b.addEventListener("click", function () { open(w); });
+      var li = el("li"); li.append(b); list.append(li);
+    });
+    list.scrollTop = keep;
+  }
+
+  function paragraphs(text) {
+    var sentences = String(text || "").match(/[^.!?]+[.!?]+["')\]]*\s*|[^.!?]+$/g) || [];
+    var out = [];
+    for (var i = 0; i < sentences.length; i += 5) out.push(sentences.slice(i, i + 5).join("").trim());
+    return out;
+  }
+
+  function renderWork() {
+    var w = state.current, box = $("work");
+    box.textContent = "";
+    $("cols").hidden = !w;
+    if (!w) return;
+    box.append(el("div", "kind", (w.medium === "novel" ? "Novel" : "Film") + "  ·  " + (state.works.indexOf(w) + 1) +
+      " of " + state.works.length + (isDone(w.id) ? "  ·  saved" : "")));
+    box.append(el("h2", null, w.title || "(untitled)"));
+    var meta = el("div", "meta");
+    meta.append(el("span", null, w.year ? String(w.year) : "Year unknown"));
+    if (w.creators && w.creators.length) meta.append(el("span", null, w.creators.join(", ")));
+    if (w.wikipedia) { var a = el("a", null, "Wikipedia article"); a.href = w.wikipedia; a.target = "_blank"; a.rel = "noopener"; meta.append(a); }
+    box.append(meta);
+    var text = el("div", "text");
+    paragraphs(w.text).forEach(function (p) { text.append(el("p", null, p)); });
+    box.append(text);
+  }
+
+  function markButton(cls, label, pressed, disabled, onClick, aria) {
+    var b = el("button", "mark " + cls, label); b.type = "button";
+    b.setAttribute("aria-pressed", String(pressed));
+    b.setAttribute("aria-label", aria);
+    b.disabled = disabled;
+    b.addEventListener("click", onClick);
+    return b;
+  }
+
+  function renderDesk() {
+    var w = state.current, box = $("items");
+    box.textContent = "";
+    if (!w) return;
+    var full = state.edit.stars.length >= MAX_STARS;
+    (w.items || []).forEach(function (id) {
+      var info = state.names[id] || { name: id, family: "" };
+      var starred = state.edit.stars.indexOf(id) >= 0, wrong = state.edit.wrong.indexOf(id) >= 0;
+      var row = el("div", "item" + (starred ? " star" : wrong ? " wrong" : ""));
+      var name = el("div", "name", info.name);
+      if (info.family) name.append(el("small", null, info.family));
+      row.append(name);
+      row.append(markButton("star", "★ Best", starred, full && !starred, function () { toggleStar(id); }, "Best describes it: " + info.name));
+      row.append(markButton("wrong", "Wrong", wrong, false, function () { toggleWrong(id); }, "Plainly wrong: " + info.name));
+      box.append(row);
+    });
+    if ($("note").value !== state.edit.note) $("note").value = state.edit.note;
+    $("done").disabled = !state.edit.stars.length;
+    $("done").title = state.edit.stars.length ? "" : "Star at least one genre first";
+    var i = state.works.indexOf(w);
+    $("prev").disabled = i <= 0; $("next").disabled = i < 0 || i >= state.works.length - 1;
+  }
+
+  // ---------- events ----------
+  $("note").addEventListener("input", function (e) { state.edit.note = e.target.value; saveSoon(); });
+  $("done").addEventListener("click", finish);
+  $("prev").addEventListener("click", function () { var i = state.works.indexOf(state.current); if (i > 0) open(state.works[i - 1]); });
+  $("next").addEventListener("click", function () { var i = state.works.indexOf(state.current); if (i >= 0 && i < state.works.length - 1) open(state.works[i + 1]); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !$("done").disabled) { e.preventDefault(); finish(); }
+  });
+  try { if (localStorage.getItem("check-guide-closed") === "1") $("guide").open = false; } catch (e) {}
+  $("guide").addEventListener("toggle", function () { try { localStorage.setItem("check-guide-closed", $("guide").open ? "0" : "1"); } catch (e) {} });
+
+  // ---------- start ----------
+  function start(db) {
+    state.db = db;
+    var slow = setTimeout(function () {
+      if (!state.worksLoaded || !state.marksLoaded) notice("The works and saved marks can't be reached yet. Still trying…");
+    }, 10000);
+    // Nothing opens until the store has confirmed the saved marks. A work opened from a
+    // stale cached copy shows no marks, and the next change would save over what's stored.
+    function firstOpen() {
+      if (state.current || !state.worksLoaded || !state.marksLoaded) return;
+      var w = firstUndone() || state.works[0];
+      if (w) { notice(""); open(w); }
+    }
+    db.collection("check_marks").limit(1000).onSnapshot(function (snap) {
+      snap.docs.forEach(function (d) { state.marks[d.id] = d.data(); });
+      if (!(snap.metadata && snap.metadata.fromCache)) state.marksLoaded = true;
+      renderProgress();
+      firstOpen();
+      var cur = state.current;
+      if (cur && !state.touched && !state.hadSaved && state.marks[cur.id]) open(cur);
+    }, function (e) { notice("Lost the connection to saved marks (" + e.code + "). Reload the page to continue."); });
+    db.collection("check_works").limit(1000).onSnapshot(function (snap) {
+      if (snap.metadata.fromCache && snap.empty) return;
+      state.worksLoaded = true;
+      state.works = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); })
+        .sort(function (a, b) { return a.order - b.order; });
+      if (!state.works.length) { notice("The 40 works aren't loaded yet. They appear here once they've been prepared."); renderProgress(); return; }
+      notice("");
+      if (state.current) {
+        var same = state.works.filter(function (w) { return w.id === state.current.id; })[0];
+        if (same) state.current = same;
+        renderProgress(); renderDesk();
+      } else { renderProgress(); firstOpen(); }
+    }, function (e) { clearTimeout(slow); notice("The works couldn't be loaded (" + e.code + "). Reload the page to try again."); });
+  }
+
+  fetch("scheme.json").then(function (r) { return r.json(); }).then(function (scheme) {
+    scheme.forEach(function (family) {
+      family.genres.forEach(function (g) { state.names[g.id] = { name: g.name, family: family.family }; });
+    });
+    if (!window.claude || !window.claude.use) { notice("This page saves your marks through Claude's artifact viewer. Open it from its claude.ai link."); return; }
+    return window.claude.use("db").then(function (db) {
+      if (!db) { notice("Saving isn't available in this view. Open the page signed in, from its claude.ai link."); return; }
+      start(db);
+    });
+  }).catch(function () { notice("The genre list couldn't be loaded. Reload the page to try again."); });
+})();
+</script>
