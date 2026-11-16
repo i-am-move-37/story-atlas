@@ -158,7 +158,8 @@ def load_works(allow_unfinished):
         g = gold.get(p, {})
         if g.get("status") != "done" or scope[p] != "in":
             left_out["skipped by Scott" if g.get("status") == "skipped" else
-                     "unfinished" if g.get("status") != "done" else f"out of scope ({scope[p]})"] += 1
+                     "unfinished" if g.get("status") != "done" else
+                     f"out of scope ({scope[p] or 'no longer in the works table'})"] += 1
             continue
         works.append({"id": p, "title": sample.loc[p, "title"], "medium": sample.loc[p, "medium"],
                       "mode": sample.loc[p, "mode"], "gold": g.get("labels", []), "note": g.get("note", ""),

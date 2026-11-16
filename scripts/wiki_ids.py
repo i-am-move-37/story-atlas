@@ -67,7 +67,7 @@ CREATOR_PROPS = ["P57", "P50"]  # director, author
 FORM_PROPS = ["P7937", "P2047"]  # form of creative work, duration
 
 FILM_WORD = re.compile(r"\bfilm\b")
-NOT_A_FILM = re.compile(r"film (series|franchise|trilogy|festival|award|genre|score|studio)")
+NOT_A_FILM = re.compile(r"film (series|franchise|trilogy|festival|award|genre|score|studio|character)")
 BOOK_WORDS = re.compile(r"\b(novel|novella|literary work|written work|book)\b")
 NOT_A_BOOK = re.compile(r"(book series|novel series|comic book|short story|trilogy|"
                         r"graphic novel|light novel series)")

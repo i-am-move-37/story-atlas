@@ -82,3 +82,7 @@ def test_facts_from_bindings_groups_values_by_property():
     assert facts["Q1"]["P31"] == [{"id": "Q11424", "label": "film"}]
     assert facts["Q1"]["P136"] == [{"id": "Q185867", "label": "film noir"}]
     assert facts["Q1"]["P577"] == ["2005-01-21T00:00:00Z"]
+
+
+def test_a_character_page_is_not_a_film_or_a_novel():
+    assert classify_type(["film character", "fictional human", "literary character"]) == "other"
