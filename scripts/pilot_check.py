@@ -28,6 +28,10 @@ SEED = 20261116
 NEAR_DECOYS, FAR_DECOYS = 2, 1
 KINDS = ("his", "method", "near decoy", "far decoy")
 BOOTSTRAPS = 4000
+# Works whose plot summary belongs to a different work than their metadata, found while reviewing
+# the marks and before the key was opened. Neither summary is a feature film, so both are out of scope.
+MISMATCHED = {"p012": "summary is the 2001 video game, metadata the unreleased film",
+              "p015": "summary is a Yes, Prime Minister episode, metadata the 2019 film"}
 
 
 # ---------- pure helpers ----------
@@ -111,9 +115,9 @@ def print_marks(works, checks):
         print(f"  {name}: {wrong} of {given} genres it gave were marked wrong ({wrong / given:.0%})")
 
 
-def print_scores(works):
+def print_scores(works, title):
     scores = {name: score(works, chain) for name, chain in CANDIDATES.items()}
-    print(f"\nADJUDICATED GOLD, genre level ({len(works)} works; this table picks the winner)")
+    print(f"\n{title}, genre level ({len(works)} works)")
     print(f"  {'candidate':24s} {'coverage':>8s} {'precision':>9s} {'recall':>7s} {'F1':>6s}")
     for name, s in scores.items():
         print(f"  {name:24s} {s['coverage']:8.1%} {s['precision']:9.3f} {s['recall']:7.3f} {s['f1']:6.3f}")
@@ -146,7 +150,9 @@ def run_score():
         checks.append({"kinds": key[w["id"]], "wrong": m["wrong"], "stars": m["stars"]})
         works.append(w | {"gold": adjudicated_gold(list(key[w["id"]]), m["wrong"], m["stars"])})
     print_marks(works, checks)
-    print_scores(works)
+    print(f"\nleft out of the deciding table: {MISMATCHED}")
+    print_scores([w for w in works if w["id"] not in MISMATCHED], "ADJUDICATED GOLD (this table picks the winner)")
+    print_scores(works, "All 40, mismatched works included (reported only)")
 
 
 if __name__ == "__main__":
