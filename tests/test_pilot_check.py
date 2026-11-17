@@ -1,6 +1,6 @@
 import random
 
-from pilot_check import adjudicated_gold, build_items, kind_rates
+from pilot_check import adjudicated_gold, build_items, kind_rates, revised
 
 FAMILIES = {"noir": "Crime", "heist": "Crime", "prison": "Crime", "legal": "Crime",
             "western": "Frontier", "war": "Conflict", "spy": "Conflict", "musical": "Stage"}
@@ -33,6 +33,15 @@ def test_items_are_the_same_for_the_same_seed():
 def test_adjudicated_gold_makes_stars_core_and_unmarked_items_neutral_and_drops_wrong_ones():
     gold = adjudicated_gold(["noir", "western", "heist", "prison"], wrong=["prison", "heist"], stars=["noir"])
     assert gold == labels(("noir", "core"), ("western", "borderline"))
+
+
+def test_revised_marks_apply_star_blank_and_wrong_without_touching_the_saved_marks():
+    saved = {"p1": {"wrong": ["legal", "war"], "stars": ["noir"]}, "p2": {"wrong": [], "stars": ["western"]}}
+    out = revised(saved, [("p1", "legal", "blank"), ("p1", "noir", "blank"), ("p1", "heist", "star"),
+                          ("p2", "western", "wrong")])
+    assert out["p1"] == {"wrong": ["war"], "stars": ["heist"]}
+    assert out["p2"] == {"wrong": ["western"], "stars": []}
+    assert saved["p1"] == {"wrong": ["legal", "war"], "stars": ["noir"]}
 
 
 def test_kind_rates_count_wrong_and_starred_by_where_the_item_came_from():

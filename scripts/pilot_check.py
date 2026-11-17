@@ -32,6 +32,13 @@ BOOTSTRAPS = 4000
 # the marks and before the key was opened. Neither summary is a feature film, so both are out of scope.
 MISMATCHED = {"p012": "summary is the 2001 video game, metadata the unreleased film",
               "p015": "summary is a Yes, Prime Minister episode, metadata the 2019 film"}
+# Scott's changes after reading Claude's review of his marks (2026-11-17), as (work, genre, new mark).
+# The deciding score uses his marks as saved; these give a second score reported beside it.
+REVISIONS = [
+    ("p037", "romantic-comedy", "blank"), ("p037", "buddy-hangout", "star"), ("p037", "gangster", "blank"),
+    ("p039", "detective-mystery", "blank"), ("p029", "children-s-family", "blank"),
+    ("p026", "biographical", "blank"), ("p034", "parody-spoof", "blank"), ("p049", "legal", "blank"),
+]
 
 
 # ---------- pure helpers ----------
@@ -65,6 +72,16 @@ def build_items(gold, methods, families, rng):
 def adjudicated_gold(items, wrong, stars):
     """Gold labels after the check: starred items are core, unmarked ones neutral, wrong ones gone."""
     return [{"id": g, "level": "core" if g in stars else "borderline"} for g in items if g not in wrong]
+
+
+def revised(marks, revisions):
+    """A copy of {work: {wrong, stars}} with each (work, genre, mark) applied; mark is star, blank or wrong."""
+    out = {p: {"wrong": list(m["wrong"]), "stars": list(m["stars"])} for p, m in marks.items()}
+    for work, genre, mark in revisions:
+        m = out[work]
+        m["wrong"] = [g for g in m["wrong"] if g != genre] + ([genre] if mark == "wrong" else [])
+        m["stars"] = [g for g in m["stars"] if g != genre] + ([genre] if mark == "star" else [])
+    return out
 
 
 def kind_rates(checks):
@@ -144,15 +161,21 @@ def run_score():
     unfinished = [p for p in key if marks.get(p, {}).get("status") != "done"]
     if unfinished:
         raise SystemExit(f"{len(unfinished)} works aren't checked yet (first: {unfinished[0]}).")
-    works, checks = [], []
-    for w in blank_works():
-        m = marks[w["id"]]
-        checks.append({"kinds": key[w["id"]], "wrong": m["wrong"], "stars": m["stars"]})
-        works.append(w | {"gold": adjudicated_gold(list(key[w["id"]]), m["wrong"], m["stars"])})
-    print_marks(works, checks)
+    blank = blank_works()
+
+    def checked(mk):
+        return [w | {"gold": adjudicated_gold(list(key[w["id"]]), mk[w["id"]]["wrong"], mk[w["id"]]["stars"])}
+                for w in blank]
+
+    works = checked(marks)
+    print_marks(works, [{"kinds": key[w["id"]], "wrong": marks[w["id"]]["wrong"], "stars": marks[w["id"]]["stars"]}
+                        for w in blank])
     print(f"\nleft out of the deciding table: {MISMATCHED}")
     print_scores([w for w in works if w["id"] not in MISMATCHED], "ADJUDICATED GOLD (this table picks the winner)")
     print_scores(works, "All 40, mismatched works included (reported only)")
+    print(f"\nScott's changes after the review: {REVISIONS}")
+    print_scores([w for w in checked(revised(marks, REVISIONS)) if w["id"] not in MISMATCHED],
+                 "After Scott's changes (reported beside the deciding table)")
 
 
 if __name__ == "__main__":
