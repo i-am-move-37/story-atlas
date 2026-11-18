@@ -6,7 +6,7 @@ Reads  data/pilot/gold/pilot_labels/pNNN.json  Scott's labels, exported from the
 Writes data/pilot/disagreements.md             every scored work where a method and the gold differ
 
 The rules, fixed before any real score was computed:
-- Scored at the genre level (the 44): a subgenre counts as its parent.
+- Scored at the genre level (44 genres when the pilot was labeled): a subgenre counts as its parent.
 - A gold label marked borderline neither helps nor hurts.
 - A work a method gives no label to is not covered, and its gold core labels count as missed.
 - Only works Scott labeled (not skipped) that are in scope are scored.

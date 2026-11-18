@@ -80,7 +80,7 @@ Film summaries grow longer by era (median about 465 words in the 1920s, 667 in t
 - **Check:** in each rehearsal, atoms per work are plotted by decade. If the slope remains, it's logged as a deviation and length is added as a covariate.
 
 ### 2.3 Genre and era labels
-- **Scheme:** `docs/genre-scheme-draft.md` (7 families → 44 genres → 217 subgenres; multi-label; shared across film and novel). Era bins are decades from 1910 (films) and 1900 (novels), with wider bins before that and backoff to neighboring decades and parent genres for thin cells.
+- **Scheme:** `docs/genre-scheme-draft.md` (7 families → 45 genres → 225 subgenres since the review of 2026-11-17; 44 and 217 when the pilot was labeled; multi-label; shared across film and novel). Era bins are decades from 1910 (films) and 1900 (novels), with wider bins before that and backoff to neighboring decades and parent genres for thin cells.
 - **Labeling pilot:** about 200 works, stratified by decade, medium, source and fame. Each is labeled three ways: Wikidata's genre field, an LLM given only title, year and creator, and an LLM given the plot. The gold set comes from Scott: 50 works labeled from scratch (to measure accuracy without anchoring) and 150 checked and corrected.
   - **Scott labels the work itself, not just its summary** (2026-11-10): the summary as a reminder, plus what he knows, plus a quick lookup for works he hasn't seen. A gold set made from the summary alone would favor the method that reads only the summary.
   - **The draft for the 150** is the labels from all three methods pooled, with no sign of which method suggested which, so it can't tilt him toward one of them. Comparing the 50 with the 150 shows how much the draft anchored him.
@@ -105,7 +105,7 @@ Film summaries grow longer by era (median about 465 words in the 1920s, 667 in t
   - **Deviation recorded:** the removal of the two mismatched works was not in the procedure above. It was decided and written down before the key was opened or any score computed, and the 40-work table is reported beside the 38 (same winner).
 - **Core or borderline (added 2026-11-10):** each genre label on a work is marked *core* (the work plainly belongs to the tradition) or *borderline* (a defensible stretch, like calling Brick a neo-western). All labels are used in the main analysis; H2 is rerun with core labels only (section 6.2).
 - **Subgenre reliability (two-part rule, 2026-11-10):** a label whose agreement is poor (Cohen's κ below 0.4) is merged into its parent. With 200 pilot works and 217 subgenres, most subgenres have too few pilot examples for κ to mean anything, so agreement is measured in two places:
-  - **Against Scott's gold set**, for all 44 genres and for any subgenre with at least 5 gold examples in the pilot.
+  - **Against Scott's gold set**, for all 44 genres of the pilot's list and for any subgenre with at least 5 gold examples in the pilot.
   - **Between the two best automatic methods across the whole corpus**, for every other subgenre. No human is involved, so this measures consistency rather than correctness; it applies Scott's principle of splitting until labelers stop agreeing.
 - **Reviewed with Scott (2026-11-10), no longer "proposed":** 90% coverage, the 2-point tie and the κ cutoff of 0.4.
 

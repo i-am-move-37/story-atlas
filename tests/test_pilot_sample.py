@@ -29,4 +29,4 @@ def test_split_outside_parens_keeps_parenthetical_lists_whole():
 
 
 def test_genre_scheme_has_the_agreed_counts():
-    assert counts(load_scheme()) == (7, 44, 217)
+    assert counts(load_scheme()) == (7, 45, 225)

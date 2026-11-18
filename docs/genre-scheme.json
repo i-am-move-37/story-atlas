@@ -300,6 +300,10 @@
      {
       "id": "science-fiction/feminist-sf",
       "name": "feminist SF"
+     },
+     {
+      "id": "science-fiction/mecha",
+      "name": "mecha"
      }
     ]
    },
@@ -370,6 +374,10 @@
      {
       "id": "fantasy/magical-girl",
       "name": "magical girl"
+     },
+     {
+      "id": "fantasy/animal-fantasy",
+      "name": "animal fantasy"
      }
     ]
    },
@@ -564,6 +572,10 @@
      {
       "id": "weird-absurdist/kafkaesque-paranoid-fiction",
       "name": "Kafkaesque / paranoid fiction"
+     },
+     {
+      "id": "weird-absurdist/metafiction",
+      "name": "metafiction"
      }
     ]
    }
@@ -637,6 +649,10 @@
      {
       "id": "action/chase-pursuit",
       "name": "chase / pursuit"
+     },
+     {
+      "id": "action/masala-film",
+      "name": "masala film"
      }
     ]
    },
@@ -667,6 +683,22 @@
      {
       "id": "war/resistance",
       "name": "resistance"
+     },
+     {
+      "id": "war/world-war-i",
+      "name": "World War I"
+     },
+     {
+      "id": "war/world-war-ii",
+      "name": "World War II"
+     },
+     {
+      "id": "war/vietnam",
+      "name": "Vietnam"
+     },
+     {
+      "id": "war/holocaust",
+      "name": "Holocaust"
      }
     ]
    },
@@ -731,6 +763,16 @@
  {
   "family": "Comedy",
   "genres": [
+   {
+    "id": "comedy",
+    "name": "Comedy",
+    "subgenres": [
+     {
+      "id": "comedy/comedy-drama",
+      "name": "comedy-drama"
+     }
+    ]
+   },
    {
     "id": "romantic-comedy",
     "name": "Romantic comedy",
@@ -932,10 +974,6 @@
      {
       "id": "musical/jukebox-musical",
       "name": "jukebox musical"
-     },
-     {
-      "id": "musical/masala-film",
-      "name": "masala film"
      }
     ]
    }

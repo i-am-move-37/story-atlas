@@ -1,6 +1,6 @@
-# Genre scheme: candidate list (draft 2, 2026-11-05)
+# Genre scheme: candidate list (draft 3, 2026-11-17)
 
-Status: **draft for Scott's review.** Nothing is locked. Draft 1 had 30 flat genres; draft 2 adds subgenres beneath them.
+Status: **draft for Scott's review.** Nothing is locked. Draft 1 had 30 flat genres; draft 2 (2026-11-05) added subgenres beneath them; draft 3 applies the eleven decisions of the review that followed the labeling pilot (2026-11-17), each recorded with its reasons under "Candidates raised during the labeling pilot" below.
 
 ## What a genre means here
 A genre is **a set of inherited conventions a writer works inside**: who the characters are, what situation they're in, how the story moves, how it ends. It isn't a shelf label, a format or an industry. A work can carry several labels. When it does, its atoms are scored against **each label's history separately**, never against the combined cell, so a mash-up like Brick (noir + teen) stays visible.
@@ -13,19 +13,21 @@ A genre is **a set of inherited conventions a writer works inside**: who the cha
 - **NYFA, [Ultimate list of film sub-genres](https://www.nyfa.edu/student-resources/ultimate-list-of-film-sub-genres/)** (N): 9 parent genres and 60 subgenres.
 - **Academic** (A): the film-studies genre canon (e.g. Neale, *Genre and Hollywood*), Moretti's British novel genres 1740–1900 (e.g. imperial gothic, silver-fork, Newgate), and Underwood's "Life Cycles of Genres".
 - **Added by me** (C): genres none of the lists had but that I'd count as clear traditions. Each of these needs Scott's sign-off.
+- **Review** (R): added in the review of 2026-11-17, from what the labeling pilot showed. Not checked against the three lists.
 
 Letters after a name show which sources list it.
 
 ## Rules for what got left out
-1. **Compounds of two genres are two labels, not one subgenre.** Action comedy, comedy horror, zombie comedy, sci-fi horror, sci-fi comedy, fantasy comedy, comedy thriller, crime thriller, crime drama, romantic thriller, fantasy romance, science fiction western, space western, gothic sci-fi, tech noir / future noir, horror drama, mafia comedy, comedy drama. Making them single labels would hide exactly the mash-ups we want to measure: a sci-fi western would no longer register as surprising. *Exception: romantic comedy, which is a tradition centuries old with its own conventions.*
+1. **Compounds of two genres are two labels, not one subgenre.** Action comedy, comedy horror, zombie comedy, sci-fi horror, sci-fi comedy, fantasy comedy, comedy thriller, crime thriller, crime drama, romantic thriller, fantasy romance, science fiction western, space western, gothic sci-fi, tech noir / future noir, horror drama, mafia comedy. Making them single labels would hide exactly the mash-ups we want to measure: a sci-fi western would no longer register as surprising. *Exception: romantic comedy, which is a tradition centuries old with its own conventions.* Since draft 3 the comedy half of a compound is the general Comedy genre (an action comedy is Action + Comedy), and comedy-drama is a subgenre of Comedy, because there drama is the half that marks out a subset.
 2. **Formats and techniques:** all the animation types, documentary modes, anthology, serial, miniseries, sitcom, sketch, soap opera as a broadcast format, and all unscripted TV.
 3. **Non-fiction:** biography, autobiography and memoir as literature, and documentary.
 4. **Source-material labels:** video-game movies, film adaptation.
 5. **Outside our date range (data ends about 2017):** LitRPG, progression fantasy, isekai.
 6. **Hair-splits merged up:** the punk variants (clockpunk, mannerpunk, nanopunk, solarpunk, "~punk") fold into *retro-punk*, and two "contemporary fantasy" entries become one.
-7. **Shelves:** Drama, Comedy, Fiction, Speculative (on their own), Art film, Experimental.
+7. **Shelves:** Drama, Fiction, Speculative (on their own), Art film, Experimental, and since the review literary fiction and postmodern fiction. Comedy was on this list until draft 3; drama stays because it is the default reading of any genre and marks out nothing.
+8. **Industries and themes (review of 2026-11-17):** anime and Bollywood as wholes (a specific story tradition inside an industry stays), and labels defined by theme or subject such as feminist fiction and LGBT-related. The sources' tags for these stay in the data for splitting results.
 
-## The draft: 7 families, 44 genres, 217 subgenres
+## The draft: 7 families, 45 genres, 225 subgenres
 
 ### Crime
 - **Noir**: film noir / noir fiction (W B), neo-noir (W B), hardboiled (W B N), Southern noir (C)
@@ -39,22 +41,23 @@ Letters after a name show which sources list it.
 - **Spy**: espionage / realist spy (W B N), gadget spy / spy-fi (C), Cold War spy (C)
 
 ### Speculative
-- **Science fiction**: hard SF (W N), soft / social SF (W), space opera (W B N), planetary romance (W), military SF (W N), cyberpunk (W B N), post-cyberpunk (W), retro-punk (steampunk, dieselpunk, atompunk) (W B N), biopunk (W), apocalyptic / post-apocalyptic (W N), dystopian (W B), utopian (W B), parallel universe (W), time travel (C), first contact / alien invasion (C), tokusatsu (W), feminist SF (W)
-- **Fantasy**: high / epic fantasy (W B N), sword and sorcery (W N), heroic fantasy (W N), dark fantasy (W B N), contemporary / urban fantasy (W B N), portal fantasy (W), historical fantasy (W), gaslamp fantasy (W), magic realism (W), mythic fiction (W), sword and planet (W), dying earth (W), Bangsian (W), shenmo (W), hard fantasy (W), magical girl (W)
+- **Science fiction**: hard SF (W N), soft / social SF (W), space opera (W B N), planetary romance (W), military SF (W N), cyberpunk (W B N), post-cyberpunk (W), retro-punk (steampunk, dieselpunk, atompunk) (W B N), biopunk (W), apocalyptic / post-apocalyptic (W N), dystopian (W B), utopian (W B), parallel universe (W), time travel (C), first contact / alien invasion (C), tokusatsu (W), feminist SF (W), mecha (R)
+- **Fantasy**: high / epic fantasy (W B N), sword and sorcery (W N), heroic fantasy (W N), dark fantasy (W B N), contemporary / urban fantasy (W B N), portal fantasy (W), historical fantasy (W), gaslamp fantasy (W), magic realism (W), mythic fiction (W), sword and planet (W), dying earth (W), Bangsian (W), shenmo (W), hard fantasy (W), magical girl (W), animal fantasy (R)
 - **Fairy tale & fable**: fairy tale (W B N), literary fairy tale (W), fable (W), legend (W)
 - **Horror**: slasher (W B N), splatter / gore (W B N), body horror (W B), psychological horror (W N), ghost / haunting (W B), occult / satanic (W B N), folk horror (W B), creature feature (W B N), kaiju (W), vampire (W B), werewolf (W B), zombie (W B), outbreak (B), found footage (W B N), survival horror (W N), cannibal (W), eco / natural horror (W), Lovecraftian / cosmic (W), religious horror (W), giallo (W), J-horror and Asian horror (W), art horror (W), holiday horror (W)
 - **Gothic**: gothic novel (W A), gothic romance (W), Southern gothic (W), suburban gothic (W), urban gothic (W), imperial gothic (A)
 - **Superhero** (W B N): origin story, team-up, deconstruction (C)
-- **Weird & absurdist**: weird fiction (W), slipstream (W), surrealist (W), absurdist (W), Kafkaesque / paranoid fiction (W)
+- **Weird & absurdist**: weird fiction (W), slipstream (W), surrealist (W), absurdist (W), Kafkaesque / paranoid fiction (W), metafiction (R)
 
 ### Action & adventure
 - **Adventure**: swashbuckler (W), pirate (W), lost world (C), treasure hunt (C), sea story (C), survival / Robinsonade (C), Ruritanian romance (W), jungle adventure (C)
-- **Action**: martial arts (W B N), wuxia (W), girls with guns (W), military action (B), one-man army (C), chase / pursuit (C)
-- **War**: combat (C), home front (C), POW / escape (C), military drama (W), anti-war (C), resistance (C)
+- **Action**: martial arts (W B N), wuxia (W), girls with guns (W), military action (B), one-man army (C), chase / pursuit (C), masala film (C)
+- **War**: combat (C), home front (C), POW / escape (C), military drama (W), anti-war (C), resistance (C), World War I (R), World War II (R), Vietnam (R), Holocaust (R)
 - **Western**: classic (A), epic (W N), outlaw (W N), marshal (W N), revenge (W N), revisionist (W B N), spaghetti (W B N), empire (W N), acid western (C)
 - **Disaster** (W B N): natural disaster, man-made catastrophe (C)
 
 ### Comedy
+- **Comedy** (R): comedy-drama (R)
 - **Romantic comedy** (W B N): screwball (W B), comedy of remarriage (W), sex comedy (W), bromantic comedy (W)
 - **Satire**: political satire (W B), mockumentary (W B), comedy of manners (W), silver-fork novel (A)
 - **Farce & slapstick**: slapstick (W B), silent comedy (W), bedroom farce (C), gross-out (W), prank comedy (B)
@@ -67,7 +70,7 @@ Letters after a name show which sources list it.
 ### Romance & melodrama
 - **Romance**: contemporary romance (W), historical romance (B), Regency romance (W B), paranormal romance (W), romantic drama (W B N), medical romance (W), chick flick (B N), courtship novel (A)
 - **Melodrama**: woman's film (A), maternal melodrama (C), family saga (W), tearjerker (C), telenovela-style melodrama (W)
-- **Musical**: backstage musical (C), dance film (C), jukebox musical (C), masala film (C)
+- **Musical**: backstage musical (C), dance film (C), jukebox musical (C)
 
 ### Youth & family (audience genres)
 - **Teen / coming of age**: teen drama (W B), high school (C), coming of age / bildungsroman (W), campus novel (C), teen sex comedy (C)

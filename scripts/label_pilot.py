@@ -44,9 +44,15 @@ Rules:
   A subgenre counts for its parent genre, so don't give both.
 - A mix of two genres is two labels. A science fiction western gets "science-fiction" and
   "western". Romantic comedy is the one mix with its own label.
+- "comedy" is for a comedy that fits none of the specific comedy genres, and for the comedy
+  half of a mix: an action comedy gets "action" and "comedy".
+- There is no drama label. "melodrama" means the narrow tradition (woman's film, maternal
+  melodrama, family saga, tearjerker), not any serious story.
+- An Indian popular film is not a "musical" just because it has songs. Use "musical" only
+  when music or performance is part of what happens in the story.
 - level "core": the work plainly belongs to that tradition.
   level "borderline": a defensible stretch.
-- Plain dramas and plain comedies may fit nothing. An empty list is a correct answer.
+- A plain drama may fit nothing. An empty list is a correct answer.
 - Most works have one to three labels. Don't pad.
 
 The scheme (family in brackets; each line is `genre-id (Genre name)` then its subgenres):

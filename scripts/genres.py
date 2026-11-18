@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SCHEME_MD = ROOT / "docs" / "genre-scheme-draft.md"
 SCHEME_JSON = ROOT / "docs" / "genre-scheme.json"
 
-SOURCE_TAG = re.compile(r"\s*\((?:[WBNAC](?: [WBNAC])*|novel)\)")  # "(W B N)", "(C)", "(novel)"
+SOURCE_TAG = re.compile(r"\s*\((?:[WBNACR](?: [WBNACR])*|novel)\)")  # "(W B N)", "(C)", "(R)", "(novel)"
 GENRE_LINE = re.compile(r"^- \*\*(.+?)\*\*(.*)$")
 
 
