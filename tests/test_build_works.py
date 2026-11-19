@@ -1,4 +1,4 @@
-from build_works import assign_works, shortest_runtime, collection_mismatches, normalize_title, pick_year, strip_tag, tag_year, title_lacks_medium
+from build_works import assign_works, shortest_runtime, collection_mismatches, normalize_title, pick_year, strip_tag, tag_year, title_lacks_medium, labels_of
 
 
 def row(uid, title, medium="film", qid=None, year=None, source="wikiplots"):
@@ -115,3 +115,10 @@ def test_a_title_lacks_its_medium_with_no_tag_or_with_a_tag_we_could_not_read():
     assert title_lacks_medium("Brick", "film")
     assert title_lacks_medium("Out of My Mind (Draper novel)", "unknown")
     assert not title_lacks_medium("Alien (1979 film)", "film")
+
+
+def test_labels_of_reads_a_propertys_labels_and_skips_values_without_one():
+    facts = {"P495": [{"id": "Q668", "label": "India"}, {"id": "Q30"}, "junk"], "P364": []}
+    assert labels_of(facts, "P495") == ["India"]
+    assert labels_of(facts, "P364") == []
+    assert labels_of(facts, "P999") == []

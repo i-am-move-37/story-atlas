@@ -242,15 +242,20 @@ def drop_collection_matches(rows):
     return rows[~(stray & rows.untagged)].copy()
 
 
+def labels_of(facts, prop):
+    """The labels of one Wikidata property's values, skipping values that have none."""
+    return [v["label"] for v in facts.get(prop, []) if isinstance(v, dict) and v.get("label")]
+
+
 def build_work(work_id, group, facts):
     """One works.parquet record from the rows of one work."""
     qid = group.qid.dropna().iloc[0] if group.qid.notna().any() else None
     wd = facts.get(qid, {})
     best = group.sort_values("words", ascending=False).iloc[0]
     year, year_source = pick_year(earliest_year(wd.get("P577", []) or wd.get("P571", [])), group.year)
-    labels = lambda prop: [v["label"] for v in wd.get(prop, []) if isinstance(v, dict) and v.get("label")]
+    labels = lambda prop: labels_of(wd, prop)
     page = own_page_facts(group, facts) if qid is None else {}
-    page_labels = lambda prop: [v["label"] for v in page.get(prop, []) if isinstance(v, dict) and v.get("label")]
+    page_labels = lambda prop: labels_of(page, prop)
     record = {
         "work_id": work_id, "qid": qid, "medium": best.medium, "title": best.title,
         "page_title": best.page_title, "year": year, "year_source": year_source,
@@ -262,6 +267,8 @@ def build_work(work_id, group, facts):
                             if isinstance(v, dict) and v.get("label")}),
         "source_genres": sorted({g for gs in group.genres for g in gs}),
         "wd_genres": labels("P136"), "wd_types": labels("P31"), "wd_forms": labels("P7937"),
+        # Country of origin and original language, for counting and splitting by national cinema.
+        "countries": labels("P495"), "languages": labels("P364"),
         "runtime": shortest_runtime(group.runtime, wd.get("P2047", []) + page.get("P2047", [])),
         "page_types": page_labels("P31"),
         "sitelinks": wd.get("sitelinks"), "imdb_id": next(iter(wd.get("P345", [])), None),
