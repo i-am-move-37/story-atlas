@@ -1,7 +1,7 @@
 import json
 
 from label_corpus import (CHECK_WORDS, batch_payload, check_prompt, estimate_cost, parse_result,
-                          request_body, split_batches, unanswered)
+                          progress_line, request_body, split_batches, stop_reason, unanswered)
 
 WORK = {"title": "Metro", "medium": "film", "year": 1997, "creators": ["Thomas Carter"],
         "text": "word " * (CHECK_WORDS + 50)}
@@ -81,3 +81,26 @@ def test_estimated_cost_falls_with_each_discount():
     both = estimate_cost(*args, cached=True, batch=True)
     assert plain > cached > both > 0
     assert both == cached / 2
+
+
+def test_run_goes_on_while_spending_is_within_the_ceiling_and_the_estimate():
+    assert stop_reason(spent=10.0, ceiling=50.0, next_worst_case=20.0, last_cost=4.0, last_estimate=4.0) is None
+    assert stop_reason(spent=0.0, ceiling=50.0, next_worst_case=20.0) is None
+
+
+def test_run_stops_when_the_next_batch_could_pass_the_ceiling():
+    assert "ceiling" in stop_reason(spent=40.0, ceiling=50.0, next_worst_case=20.0)
+
+
+def test_run_stops_when_a_batch_cost_far_more_than_estimated():
+    reason = stop_reason(spent=10.0, ceiling=500.0, next_worst_case=20.0, last_cost=9.0, last_estimate=4.0)
+    assert "more than 1.5 times" in reason
+
+
+def test_run_stops_when_the_provider_reports_no_cost():
+    assert "no cost" in stop_reason(spent=None, ceiling=500.0, next_worst_case=20.0)
+
+
+def test_progress_line_projects_the_rest_from_the_cost_so_far():
+    assert progress_line(1000, 4000, 8.0) == "1,000 of 4,000 works answered; $8.00 charged; about $24.00 more at this rate"
+    assert "about $0.00 more" in progress_line(0, 4000, 0.0)

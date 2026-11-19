@@ -7,19 +7,25 @@ Three jobs, each one LLM call per in-scope work, sent through OpenRouter's Batch
 
 Steps:
   plan      FREE. Counts the works and estimates tokens, batches and cost for a job.
-  submit    PAID. Sends the works that have no answer yet, in batches. Needs --spend-ceiling.
+  run       PAID. Sends ONE batch, waits for it, saves the answers, compares what it cost with
+            the estimate, and only then sends the next. Needs --spend-ceiling. It stops when the
+            total charged plus the next batch's worst case would pass the ceiling, when a batch
+            costs more than COST_TOLERANCE times its estimate, or when no cost is reported.
   collect   Free to call. Fetches finished batches and appends answers to data/labels/<job>.jsonl.
+
+A submitted batch cannot be cancelled, so the batch is the unit of risk: keep --batch-size small.
 
 The genre list and rules go in a cached system block, so repeat calls pay a tenth for it.
 Answers are appended as they arrive; a rerun skips works already answered.
 
 Usage: uv run scripts/label_corpus.py plan --job metadata [--limit 200]
-       uv run scripts/label_corpus.py submit --job metadata --limit 200 --spend-ceiling 20
+       uv run scripts/label_corpus.py run --job metadata --limit 200 --spend-ceiling 20
        uv run scripts/label_corpus.py collect --job metadata
 """
 
 import argparse
 import json
+import time
 import urllib.request
 from pathlib import Path
 
@@ -41,6 +47,9 @@ CHARS_PER_TOKEN = 4          # rough, for estimates only
 MAX_BATCH_BYTES = 150_000_000  # the documented limit is 200 MB per batch
 MAX_BATCH_REQUESTS = 10_000    # no documented number; a 413 reply names the real one
 CHECK_WORDS = 400              # how much of the summary the check reads
+BATCH_SIZE = 1000              # works per batch when running in stages
+COST_TOLERANCE = 1.5           # stop if a batch costs more than this times its estimate
+POLL_SECONDS = 60
 
 FORMS = ["feature film", "short film", "television episode or series", "novel or novella",
          "short story", "play", "poem", "comic or graphic novel", "video game", "non-fiction",
@@ -151,6 +160,30 @@ def estimate_cost(n, system_chars, user_chars, output_tokens=120, cached=True, b
     return dollars * (BATCH_FACTOR if batch else 1.0)
 
 
+def stop_reason(spent, ceiling, next_worst_case, last_cost=None, last_estimate=None,
+                tolerance=COST_TOLERANCE):
+    """Why the staged run must stop before sending another batch, or None to go on.
+
+    `spent` is what the provider says it has charged so far; None means it didn't say.
+    """
+    if spent is None:
+        return "the provider reported no cost for a finished batch, so spending can't be tracked"
+    if last_cost is not None and last_estimate and last_cost > tolerance * last_estimate:
+        return (f"the last batch cost ${last_cost:,.2f}, more than {tolerance} times "
+                f"its estimate of ${last_estimate:,.2f}")
+    if spent + next_worst_case > ceiling:
+        return (f"${spent:,.2f} charged so far plus up to ${next_worst_case:,.2f} for the next batch "
+                f"would pass the ceiling of ${ceiling:,.2f}")
+    return None
+
+
+def progress_line(done, total, spent):
+    """One line of status, with the cost of the rest projected from the cost so far."""
+    rest = spent / done * (total - done) if done else 0.0
+    return (f"{done:,} of {total:,} works answered; ${spent:,.2f} charged; "
+            f"about ${rest:,.2f} more at this rate")
+
+
 # ---------- data ----------
 
 def load_works(limit=None, only=None):
@@ -214,56 +247,87 @@ def step_plan(job, limit):
     print("These are estimates from character counts. The trial measures the real cost.")
 
 
-def step_submit(job, limit, ceiling):
-    works = load_works(limit)
-    done = done_ids(job)
-    todo = [w for w in works if w["work_id"] not in done]
-    system, requests = build_requests(job, todo)
-    user_chars = sum(len(r["body"]["messages"][1]["content"]) for r in requests)
-    worst = estimate_cost(len(todo), len(system), user_chars, cached=False, batch=False)
-    if worst > ceiling:
-        raise SystemExit(f"Not sent. With no discounts this could cost ${worst:,.0f}, above the ceiling of "
-                         f"${ceiling:,.0f}. Lower --limit or raise --spend-ceiling.")
+def read_log(job):
+    path = OUT / f"{job}.batches.jsonl"
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
+
+
+def write_log(job, batches):
     OUT.mkdir(parents=True, exist_ok=True)
-    with (OUT / f"{job}.batches.jsonl").open("a", encoding="utf-8") as log:
-        for group in split_batches(requests):
-            reply = call("POST", BATCHES_URL, batch_payload(MODEL, group))
-            log.write(json.dumps({"id": reply["id"], "requests": len(group), "collected": False}) + "\n")
-            print(f"submitted batch {reply['id']} with {len(group):,} requests")
+    (OUT / f"{job}.batches.jsonl").write_text("".join(json.dumps(b) + "\n" for b in batches), encoding="utf-8")
 
 
 def step_collect(job):
-    log_path = OUT / f"{job}.batches.jsonl"
-    batches = [json.loads(line) for line in log_path.read_text(encoding="utf-8").splitlines() if line]
-    valid = set(scheme_order(load_scheme()))
+    """Fetch every finished batch not yet saved. Returns True while any batch is still running."""
+    batches, valid, running = read_log(job), set(scheme_order(load_scheme())), False
     for b in batches:
         if b["collected"]:
             continue
         reply = call("GET", f"{BATCHES_URL}/{b['id']}")
-        print(f"batch {b['id']}: {reply['status']}  usage {reply.get('usage')}")
-        if reply["status"] != "completed":
+        if reply["status"] in ("validating", "in_progress", "finalizing"):
+            running = True
             continue
-        rows = [parse_result(e, job, valid) for e in reply["results"]]
+        rows = [parse_result(e, job, valid) for e in reply.get("results") or []]
         with answers_path(job).open("a", encoding="utf-8") as out:
             for row in rows:
                 out.write(json.dumps(row, ensure_ascii=False) + "\n")
-        b |= {"collected": True, "usage": reply.get("usage"), "failed": sum(not r["ok"] for r in rows)}
-        print(f"  saved {len(rows):,} answers, {b['failed']} failed")
-    log_path.write_text("".join(json.dumps(b) + "\n" for b in batches), encoding="utf-8")
+        b |= {"collected": True, "status": reply["status"], "cost": (reply.get("usage") or {}).get("cost"),
+              "failed": sum(not r["ok"] for r in rows)}
+        print(f"batch {b['id']}: {reply['status']}, {len(rows):,} answers saved, {b['failed']} failed, "
+              f"charged {b['cost']} (estimated ${b['estimate']:,.2f})")
+    write_log(job, batches)
+    return running
+
+
+def step_run(job, limit, ceiling, batch_size):
+    """Send one batch at a time, checking what each cost before sending the next."""
+    works = load_works(limit)
+    total = len(works)
+    while True:
+        if step_collect(job):
+            time.sleep(POLL_SECONDS)
+            continue
+        batches, done = read_log(job), done_ids(job)
+        finished = [b for b in batches if b["collected"]]
+        spent = None if any(b["cost"] is None for b in finished) else sum(b["cost"] for b in finished)
+        if spent is not None:
+            print(progress_line(sum(w["work_id"] in done for w in works), total, spent))
+        tried = {i for b in finished for i in b["work_ids"]}
+        todo = [w for w in works if w["work_id"] not in done and w["work_id"] not in tried][:batch_size]
+        if not todo:
+            print(f"nothing left to send; {len(tried - done)} works failed and were not retried")
+            return
+        system, requests = build_requests(job, todo)
+        user_chars = sum(len(r["body"]["messages"][1]["content"]) for r in requests)
+        worst = estimate_cost(len(todo), len(system), user_chars, cached=False, batch=False)
+        last = finished[-1] if finished else {}
+        reason = stop_reason(spent, ceiling, worst, last.get("cost"), last.get("estimate"))
+        if reason:
+            print(f"STOPPED before sending the next batch: {reason}.")
+            return
+        reply = call("POST", BATCHES_URL, batch_payload(MODEL, requests))
+        batches.append({"id": reply["id"], "work_ids": [w["work_id"] for w in todo], "collected": False,
+                        "estimate": estimate_cost(len(todo), len(system), user_chars), "worst_case": worst})
+        write_log(job, batches)
+        print(f"sent batch {reply['id']}: {len(todo):,} works, estimated ${batches[-1]['estimate']:,.2f}, "
+              f"at most ${worst:,.2f}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("step", choices=["plan", "submit", "collect"])
+    parser.add_argument("step", choices=["plan", "run", "collect"])
     parser.add_argument("--job", choices=["check", "metadata", "plot"], required=True)
     parser.add_argument("--limit", type=int)
     parser.add_argument("--spend-ceiling", type=float)
+    parser.add_argument("--batch-size", type=int, default=BATCH_SIZE)
     args = parser.parse_args()
     if args.step == "plan":
         step_plan(args.job, args.limit)
-    elif args.step == "submit":
+    elif args.step == "run":
         if args.spend_ceiling is None:
-            raise SystemExit("submit spends money: pass --spend-ceiling DOLLARS.")
-        step_submit(args.job, args.limit, args.spend_ceiling)
+            raise SystemExit("run spends money: pass --spend-ceiling DOLLARS.")
+        step_run(args.job, args.limit, args.spend_ceiling, args.batch_size)
     else:
         step_collect(args.job)
