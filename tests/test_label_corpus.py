@@ -81,8 +81,8 @@ def test_estimated_cost_is_lowest_when_the_instructions_are_read_from_the_cache(
     read, none, write = (estimate_cost(*args, cache=c) for c in ("read", "none", "write"))
     assert 0 < read < none < write
     assert worst_case(*args) == write
-    # 1000 calls x 4000 instruction tokens at $0.10 per million, 100,000 text tokens at $4, 120,000 answer tokens at $20
-    assert round(read, 4) == round(0.4 + 0.4 + 2.4, 4)
+    # 1000 calls x 4000 instruction tokens at $0.10 per million, 100,000 text tokens at $4, 240,000 answer tokens at $20
+    assert round(read, 4) == round(0.4 + 0.4 + 4.8, 4)
 
 
 def test_run_name_keeps_runs_with_different_models_apart():

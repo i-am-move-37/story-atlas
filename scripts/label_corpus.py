@@ -53,7 +53,7 @@ CHARS_PER_TOKEN = 4          # rough, for estimates only
 # The genre list is dense with ids and slashes: the first paid call measured 5,455 tokens for
 # 12,344 characters of rules and list, about 2.3 characters per token.
 LIST_CHARS_PER_TOKEN = 2.3
-OUTPUT_TOKENS = 120          # rough length of one answer, for estimates only
+OUTPUT_TOKENS = 240          # measured on the first batch: about 40 of answer and 200 of reasoning
 MAX_BATCH_BYTES = 150_000_000  # the documented limit is 200 MB per batch
 MAX_BATCH_REQUESTS = 10_000    # no documented number; a 413 reply names the real one
 CHECK_WORDS = 400              # how much of the summary the check reads
