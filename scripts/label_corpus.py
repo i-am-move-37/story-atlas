@@ -12,6 +12,9 @@ Steps:
             total charged plus the next batch's worst case would pass the ceiling, when a batch
             costs more than COST_TOLERANCE times its estimate, or when no cost is reported.
   collect   Free to call. Fetches finished batches and appends answers to data/labels/.
+  direct    PAID. One ordinary request per work, a few at a time, at twice the batch price.
+            For the check on the small model: there a batch is screened before it runs, and
+            one flagged summary fails the whole batch. Sent one by one, only that work fails.
 
 A submitted batch cannot be cancelled, so the batch is the unit of risk: keep --batch-size small.
 The genre list and rules go in a system block cached for an hour. Requests inside one batch may
@@ -27,6 +30,7 @@ import argparse
 import json
 import time
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pandas as pd
@@ -60,6 +64,8 @@ CHECK_WORDS = 400              # how much of the summary the check reads
 BATCH_SIZE = 1000              # works per batch when running in stages
 COST_TOLERANCE = 1.5           # stop if a batch costs more than this times its estimate
 POLL_SECONDS = 60
+DIRECT_WORKERS = 8
+DIRECT_FACTOR = 2.0            # an ordinary request costs twice the batch price
 
 FORMS = ["feature film", "short film", "television episode or series", "novel or novella",
          "short story", "play", "poem", "comic or graphic novel", "video game", "non-fiction",
@@ -377,9 +383,38 @@ def step_run(job, model, limit, ceiling, batch_size):
               f"at most ${worst:,.2f}")
 
 
+def step_direct(job, model, limit, ceiling):
+    """One ordinary request per unanswered work. A work the provider refuses fails alone."""
+    name, price = run_name(job, model), PRICES[model]
+    done = done_ids(name)
+    todo = [w for w in load_works(limit) if w["work_id"] not in done]
+    system, requests = build_requests(job, todo)
+    user_chars = sum(len(r["body"]["messages"][1]["content"]) for r in requests)
+    worst = DIRECT_FACTOR * worst_case(len(todo), system_chars(job, system), user_chars, price)
+    if worst > ceiling:
+        raise SystemExit(f"Not sent: {len(todo):,} works could cost up to ${worst:,.2f}, above the ceiling of ${ceiling:,.2f}.")
+    valid, ids = set(scheme_order(load_scheme())), [w["work_id"] for w in todo]
+
+    def one(request):
+        try:
+            reply = call("POST", CHAT_URL, {"model": model} | request["body"])
+        except ApiError as e:
+            return {"work_id": ids[int(request["custom_id"].rsplit("-", 1)[1])], "ok": False, "error": str(e)[:300]}
+        return parse_result({"custom_id": request["custom_id"], "response": {"body": reply}}, job, valid, ids)
+
+    OUT.mkdir(parents=True, exist_ok=True)
+    spent = failed = 0
+    with ThreadPoolExecutor(DIRECT_WORKERS) as pool, answers_path(name).open("a", encoding="utf-8") as out:
+        for row in pool.map(one, requests):
+            out.write(json.dumps(row, ensure_ascii=False) + "\n")
+            spent += (row.get("usage") or {}).get("cost") or 0.0
+            failed += not row["ok"]
+    print(f"{len(todo):,} works sent one by one: {failed} failed, ${spent:,.4f} charged")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("step", choices=["plan", "run", "collect"])
+    parser.add_argument("step", choices=["plan", "run", "collect", "direct"])
     parser.add_argument("--job", choices=["check", "metadata", "plot"], required=True)
     parser.add_argument("--model", choices=sorted(PRICES))
     parser.add_argument("--limit", type=int)
@@ -389,9 +424,12 @@ if __name__ == "__main__":
     model = args.model or JOB_MODEL[args.job]
     if args.step == "plan":
         step_plan(args.job, model, args.limit)
-    elif args.step == "run":
+    elif args.step in ("run", "direct"):
         if args.spend_ceiling is None:
-            raise SystemExit("run spends money: pass --spend-ceiling DOLLARS.")
-        step_run(args.job, model, args.limit, args.spend_ceiling, args.batch_size)
+            raise SystemExit(f"{args.step} spends money: pass --spend-ceiling DOLLARS.")
+        if args.step == "run":
+            step_run(args.job, model, args.limit, args.spend_ceiling, args.batch_size)
+        else:
+            step_direct(args.job, model, args.limit, args.spend_ceiling)
     else:
         step_collect(run_name(args.job, model), args.job)
