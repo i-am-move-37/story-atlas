@@ -1,7 +1,8 @@
 import json
 
 from label_corpus import (CHECK_WORDS, batch_payload, check_prompt, estimate_cost, parse_result,
-                          progress_line, request_body, split_batches, stop_reason, unanswered)
+                          progress_line, request_body, run_name, split_batches, stop_reason, unanswered,
+                          worst_case)
 
 WORK = {"title": "Metro", "medium": "film", "year": 1997, "creators": ["Thomas Carter"],
         "text": "word " * (CHECK_WORDS + 50)}
@@ -74,13 +75,18 @@ def test_check_prompt_shows_the_metadata_and_only_the_start_of_a_long_summary():
     assert prompt.count("word") == CHECK_WORDS and prompt.endswith("[...]")
 
 
-def test_estimated_cost_falls_with_each_discount():
-    args = (1000, 16000, 400000)
-    plain = estimate_cost(*args, cached=False, batch=False)
-    cached = estimate_cost(*args, cached=True, batch=False)
-    both = estimate_cost(*args, cached=True, batch=True)
-    assert plain > cached > both > 0
-    assert both == cached / 2
+def test_estimated_cost_is_lowest_when_the_instructions_are_read_from_the_cache():
+    price = {"in": 4.0, "out": 20.0, "read": 0.10, "write": 8.0}
+    args = (1000, 16000, 400000, price)
+    read, none, write = (estimate_cost(*args, cache=c) for c in ("read", "none", "write"))
+    assert 0 < read < none < write
+    assert worst_case(*args) == write
+    # 1000 calls x 4000 instruction tokens at $0.10 per million, 100,000 text tokens at $4, 120,000 answer tokens at $20
+    assert round(read, 4) == round(0.4 + 0.4 + 2.4, 4)
+
+
+def test_run_name_keeps_runs_with_different_models_apart():
+    assert run_name("plot", "anthropic/claude-fable-5.2") == "plot--claude-fable-5.2"
 
 
 def test_run_goes_on_while_spending_is_within_the_ceiling_and_the_estimate():

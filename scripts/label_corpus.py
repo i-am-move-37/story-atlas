@@ -11,15 +11,15 @@ Steps:
             the estimate, and only then sends the next. Needs --spend-ceiling. It stops when the
             total charged plus the next batch's worst case would pass the ceiling, when a batch
             costs more than COST_TOLERANCE times its estimate, or when no cost is reported.
-  collect   Free to call. Fetches finished batches and appends answers to data/labels/<job>.jsonl.
+  collect   Free to call. Fetches finished batches and appends answers to data/labels/.
 
 A submitted batch cannot be cancelled, so the batch is the unit of risk: keep --batch-size small.
+The genre list and rules go in a system block cached for an hour. Requests inside one batch may
+run at the same moment, before any of them has written the cache, so `run` first sends one
+ordinary request to write it. Answers are appended as they arrive; a rerun skips answered works.
 
-The genre list and rules go in a cached system block, so repeat calls pay a tenth for it.
-Answers are appended as they arrive; a rerun skips works already answered.
-
-Usage: uv run scripts/label_corpus.py plan --job metadata [--limit 200]
-       uv run scripts/label_corpus.py run --job metadata --limit 200 --spend-ceiling 20
+Usage: uv run scripts/label_corpus.py plan --job metadata [--limit 200] [--model ...]
+       uv run scripts/label_corpus.py run --job metadata --limit 200 --spend-ceiling 5
        uv run scripts/label_corpus.py collect --job metadata
 """
 
@@ -38,12 +38,19 @@ from label_pilot import (LABELS_SCHEMA, MODEL, RULES, api_key, clean_labels, met
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "labels"
 BATCHES_URL = "https://openrouter.ai/api/v1/batches"
+CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-# Prices in dollars per million tokens, from the pilot. The batch and cache factors are
-# OpenRouter's documented typical values; the 200-work trial replaces them with measured cost.
-PRICE_IN, PRICE_OUT = 8.0, 40.0
-CACHE_WRITE_1H, CACHE_READ, BATCH_FACTOR = 2.0, 0.1, 0.5
+# Batch prices in dollars per million tokens, read from OpenRouter's model list on 2026-11-20
+# (the ":batch" variant of each model): input, output, cached-input read, one-hour cache write.
+PRICES = {
+    "anthropic/claude-fable-5.2": {"in": 4.0, "out": 20.0, "read": 0.10, "write": 8.0},
+    "anthropic/claude-opus-5.5": {"in": 2.0, "out": 10.0, "read": 0.10, "write": 4.0},
+    "anthropic/claude-sonnet-5.5": {"in": 1.0, "out": 5.0, "read": 0.05, "write": 2.0},
+    "anthropic/claude-haiku-5.5": {"in": 0.05, "out": 0.25, "read": 0.005, "write": 0.10},
+}
+JOB_MODEL = {"check": "anthropic/claude-haiku-5.5", "metadata": MODEL, "plot": MODEL}
 CHARS_PER_TOKEN = 4          # rough, for estimates only
+OUTPUT_TOKENS = 120          # rough length of one answer, for estimates only
 MAX_BATCH_BYTES = 150_000_000  # the documented limit is 200 MB per batch
 MAX_BATCH_REQUESTS = 10_000    # no documented number; a 413 reply names the real one
 CHECK_WORDS = 400              # how much of the summary the check reads
@@ -149,15 +156,21 @@ def unanswered(work_ids, done):
     return [w for w in work_ids if w not in done]
 
 
-def estimate_cost(n, system_chars, user_chars, output_tokens=120, cached=True, batch=True):
-    """Rough dollars for n calls. One cache write, then reads, when `cached`."""
+def estimate_cost(n, system_chars, user_chars, price, cache="read", output_tokens=OUTPUT_TOKENS):
+    """Rough dollars for n batch calls at `price`.
+
+    `cache` says what happens to the shared instructions on each call: "read" (found in the
+    cache, the cheap case), "none" (not cached, full input price) or "write" (every call
+    writes the cache, the dearest case, which happens when calls run before any has written it).
+    """
     system_tokens, user_tokens = system_chars / CHARS_PER_TOKEN, user_chars / CHARS_PER_TOKEN
-    if cached:
-        system_cost = system_tokens * (CACHE_WRITE_1H + (n - 1) * CACHE_READ)
-    else:
-        system_cost = system_tokens * n
-    dollars = (system_cost + user_tokens) * PRICE_IN / 1e6 + n * output_tokens * PRICE_OUT / 1e6
-    return dollars * (BATCH_FACTOR if batch else 1.0)
+    per_system_token = {"read": price["read"], "none": price["in"], "write": price["write"]}[cache]
+    return (n * system_tokens * per_system_token + user_tokens * price["in"]
+            + n * output_tokens * price["out"]) / 1e6
+
+
+def worst_case(n, system_chars, user_chars, price):
+    return max(estimate_cost(n, system_chars, user_chars, price, cache=c) for c in ("none", "write"))
 
 
 def stop_reason(spent, ceiling, next_worst_case, last_cost=None, last_estimate=None,
@@ -184,6 +197,11 @@ def progress_line(done, total, spent):
             f"about ${rest:,.2f} more at this rate")
 
 
+def run_name(job, model):
+    """File stem for one job run with one model, e.g. 'plot--claude-fable-5.2'."""
+    return f"{job}--{model.split('/')[-1]}"
+
+
 # ---------- data ----------
 
 def load_works(limit=None, only=None):
@@ -191,7 +209,7 @@ def load_works(limit=None, only=None):
     works = pd.read_parquet(ROOT / "data" / "works.parquet")
     works = works[works.scope == "in"]
     if only is not None:
-        works = works[works.work_id.isin(only)]
+        works = works[works.work_id.astype(str).isin(only)]
     if limit:
         works = works.sample(n=min(limit, len(works)), random_state=20261118)
     text = pd.read_parquet(ROOT / "data" / "summaries.parquet", columns=["uid", "text"],
@@ -201,12 +219,12 @@ def load_works(limit=None, only=None):
              "creators": list(w.creators)[:6], "text": text[w.text_uid]} for w in works.itertuples()]
 
 
-def answers_path(job):
-    return OUT / f"{job}.jsonl"
+def answers_path(name):
+    return OUT / f"{name}.jsonl"
 
 
-def done_ids(job):
-    path = answers_path(job)
+def done_ids(name):
+    path = answers_path(name)
     if not path.exists():
         return set()
     rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
@@ -219,49 +237,61 @@ def build_requests(job, works):
                     for w in works]
 
 
+def read_log(name):
+    path = OUT / f"{name}.batches.jsonl"
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
+
+
+def write_log(name, batches):
+    OUT.mkdir(parents=True, exist_ok=True)
+    (OUT / f"{name}.batches.jsonl").write_text("".join(json.dumps(b) + "\n" for b in batches), encoding="utf-8")
+
+
 # ---------- network ----------
 
 def call(method, url, payload=None):
     data = None if payload is None else json.dumps(payload, ensure_ascii=False).encode("utf-8")
     request = urllib.request.Request(url, data=data, method=method, headers={
         "Authorization": f"Bearer {api_key()}", "Content-Type": "application/json"})
-    with urllib.request.urlopen(request, timeout=600) as r:
-        return json.loads(r.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(request, timeout=600) as r:
+            return json.loads(r.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        raise SystemExit(f"{method} {url} failed: {e.code} {e.read().decode('utf-8', 'replace')[:600]}")
+
+
+def warm_cache(model, body):
+    """One ordinary request, so the shared instructions are in the cache before a batch runs."""
+    reply = call("POST", CHAT_URL, {"model": model} | body)
+    usage = reply.get("usage") or {}
+    print(f"cache warm-up: {json.dumps(usage)[:400]}")
+    return usage
 
 
 # ---------- steps ----------
 
-def step_plan(job, limit):
+def step_plan(job, model, limit):
+    name, price = run_name(job, model), PRICES[model]
     works = load_works(limit)
-    todo = [w for w in works if w["work_id"] in set(unanswered([w["work_id"] for w in works], done_ids(job)))]
+    done = done_ids(name)
+    todo = [w for w in works if w["work_id"] not in done]
     system, requests = build_requests(job, todo)
     user_chars = sum(len(r["body"]["messages"][1]["content"]) for r in requests)
-    groups = split_batches(requests)
-    print(f"job {job}: {len(works):,} works in scope, {len(todo):,} without an answer yet")
+    print(f"job {job} on {model}: {len(works):,} works in scope, {len(todo):,} without an answer yet")
     print(f"shared instructions: about {len(system) / CHARS_PER_TOKEN:,.0f} tokens; "
           f"per-work text: about {user_chars / CHARS_PER_TOKEN / max(len(todo), 1):,.0f} tokens on average")
-    print(f"batches needed: {len(groups)}")
-    for label, cached, batch in (("no discounts", False, False), ("caching only", True, False),
-                                 ("batch only", False, True), ("caching and batch", True, True)):
-        print(f"  estimated cost, {label:18s} ${estimate_cost(len(todo), len(system), user_chars, cached=cached, batch=batch):,.0f}")
-    print("These are estimates from character counts. The trial measures the real cost.")
+    print(f"batches of {BATCH_SIZE:,}: {-(-len(todo) // BATCH_SIZE)}")
+    for label, cache in (("instructions read from the cache", "read"), ("instructions not cached", "none"),
+                         ("every call writes the cache", "write")):
+        print(f"  batch price, {label:34s} ${estimate_cost(len(todo), len(system), user_chars, price, cache):,.2f}")
+    print("Estimates from character counts and a guessed answer length. The trial measures the real cost.")
 
 
-def read_log(job):
-    path = OUT / f"{job}.batches.jsonl"
-    if not path.exists():
-        return []
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
-
-
-def write_log(job, batches):
-    OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / f"{job}.batches.jsonl").write_text("".join(json.dumps(b) + "\n" for b in batches), encoding="utf-8")
-
-
-def step_collect(job):
+def step_collect(name, job):
     """Fetch every finished batch not yet saved. Returns True while any batch is still running."""
-    batches, valid, running = read_log(job), set(scheme_order(load_scheme())), False
+    batches, valid, running = read_log(name), set(scheme_order(load_scheme())), False
     for b in batches:
         if b["collected"]:
             continue
@@ -270,26 +300,28 @@ def step_collect(job):
             running = True
             continue
         rows = [parse_result(e, job, valid) for e in reply.get("results") or []]
-        with answers_path(job).open("a", encoding="utf-8") as out:
+        with answers_path(name).open("a", encoding="utf-8") as out:
             for row in rows:
                 out.write(json.dumps(row, ensure_ascii=False) + "\n")
         b |= {"collected": True, "status": reply["status"], "cost": (reply.get("usage") or {}).get("cost"),
-              "failed": sum(not r["ok"] for r in rows)}
+              "usage": reply.get("usage"), "failed": sum(not r["ok"] for r in rows),
+              "error": reply.get("error")}
         print(f"batch {b['id']}: {reply['status']}, {len(rows):,} answers saved, {b['failed']} failed, "
               f"charged {b['cost']} (estimated ${b['estimate']:,.2f})")
-    write_log(job, batches)
+    write_log(name, batches)
     return running
 
 
-def step_run(job, limit, ceiling, batch_size):
+def step_run(job, model, limit, ceiling, batch_size):
     """Send one batch at a time, checking what each cost before sending the next."""
+    name, price = run_name(job, model), PRICES[model]
     works = load_works(limit)
     total = len(works)
     while True:
-        if step_collect(job):
+        if step_collect(name, job):
             time.sleep(POLL_SECONDS)
             continue
-        batches, done = read_log(job), done_ids(job)
+        batches, done = read_log(name), done_ids(name)
         finished = [b for b in batches if b["collected"]]
         spent = None if any(b["cost"] is None for b in finished) else sum(b["cost"] for b in finished)
         if spent is not None:
@@ -301,16 +333,17 @@ def step_run(job, limit, ceiling, batch_size):
             return
         system, requests = build_requests(job, todo)
         user_chars = sum(len(r["body"]["messages"][1]["content"]) for r in requests)
-        worst = estimate_cost(len(todo), len(system), user_chars, cached=False, batch=False)
+        worst = worst_case(len(todo), len(system), user_chars, price)
         last = finished[-1] if finished else {}
         reason = stop_reason(spent, ceiling, worst, last.get("cost"), last.get("estimate"))
         if reason:
             print(f"STOPPED before sending the next batch: {reason}.")
             return
-        reply = call("POST", BATCHES_URL, batch_payload(MODEL, requests))
+        warm_cache(model, requests[0]["body"])
+        reply = call("POST", BATCHES_URL, batch_payload(model, requests))
         batches.append({"id": reply["id"], "work_ids": [w["work_id"] for w in todo], "collected": False,
-                        "estimate": estimate_cost(len(todo), len(system), user_chars), "worst_case": worst})
-        write_log(job, batches)
+                        "estimate": estimate_cost(len(todo), len(system), user_chars, price), "worst_case": worst})
+        write_log(name, batches)
         print(f"sent batch {reply['id']}: {len(todo):,} works, estimated ${batches[-1]['estimate']:,.2f}, "
               f"at most ${worst:,.2f}")
 
@@ -319,15 +352,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("step", choices=["plan", "run", "collect"])
     parser.add_argument("--job", choices=["check", "metadata", "plot"], required=True)
+    parser.add_argument("--model", choices=sorted(PRICES))
     parser.add_argument("--limit", type=int)
     parser.add_argument("--spend-ceiling", type=float)
     parser.add_argument("--batch-size", type=int, default=BATCH_SIZE)
     args = parser.parse_args()
+    model = args.model or JOB_MODEL[args.job]
     if args.step == "plan":
-        step_plan(args.job, args.limit)
+        step_plan(args.job, model, args.limit)
     elif args.step == "run":
         if args.spend_ceiling is None:
             raise SystemExit("run spends money: pass --spend-ceiling DOLLARS.")
-        step_run(args.job, args.limit, args.spend_ceiling, args.batch_size)
+        step_run(args.job, model, args.limit, args.spend_ceiling, args.batch_size)
     else:
-        step_collect(args.job)
+        step_collect(run_name(args.job, model), args.job)
