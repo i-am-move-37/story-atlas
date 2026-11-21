@@ -50,6 +50,9 @@ PRICES = {
 }
 JOB_MODEL = {"check": "anthropic/claude-haiku-5.5", "metadata": MODEL, "plot": MODEL}
 CHARS_PER_TOKEN = 4          # rough, for estimates only
+# The genre list is dense with ids and slashes: the first paid call measured 5,455 tokens for
+# 12,344 characters of rules and list, about 2.3 characters per token.
+LIST_CHARS_PER_TOKEN = 2.3
 OUTPUT_TOKENS = 120          # rough length of one answer, for estimates only
 MAX_BATCH_BYTES = 150_000_000  # the documented limit is 200 MB per batch
 MAX_BATCH_REQUESTS = 10_000    # no documented number; a 413 reply names the real one
@@ -135,9 +138,22 @@ def split_batches(requests, max_bytes=MAX_BATCH_BYTES, max_requests=MAX_BATCH_RE
     return groups + ([current] if current else [])
 
 
-def parse_result(entry, job, valid_ids):
-    """One batch result -> {work_id, ok, answer | error, usage}. Never raises on a bad reply."""
-    work_id = entry["custom_id"].split(":", 1)[1]
+def custom_id(job, position):
+    """A batch request's id. The provider allows only letters, digits, '_' and '-'."""
+    return f"{job}-{position}"
+
+
+def system_chars(job, system):
+    """Length of the shared instructions, scaled so CHARS_PER_TOKEN gives their real token count."""
+    return len(system) if job == "check" else len(system) * CHARS_PER_TOKEN / LIST_CHARS_PER_TOKEN
+
+
+def parse_result(entry, job, valid_ids, work_ids):
+    """One batch result -> {work_id, ok, answer | error, usage}. Never raises on a bad reply.
+
+    `work_ids` are the batch's works in the order sent; the request id holds the position.
+    """
+    work_id = work_ids[int(entry["custom_id"].rsplit("-", 1)[1])]
     if entry.get("error") or not entry.get("response"):
         return {"work_id": work_id, "ok": False, "error": json.dumps(entry.get("error"))[:300]}
     body = entry["response"].get("body") or {}
@@ -233,8 +249,8 @@ def done_ids(name):
 
 def build_requests(job, works):
     system, prompt, schema, name = job_spec(job, load_scheme())
-    return system, [{"custom_id": f"{job}:{w['work_id']}", "body": request_body(system, prompt(w), schema, name)}
-                    for w in works]
+    return system, [{"custom_id": custom_id(job, i), "body": request_body(system, prompt(w), schema, name)}
+                    for i, w in enumerate(works)]
 
 
 def read_log(name):
@@ -280,12 +296,12 @@ def step_plan(job, model, limit):
     system, requests = build_requests(job, todo)
     user_chars = sum(len(r["body"]["messages"][1]["content"]) for r in requests)
     print(f"job {job} on {model}: {len(works):,} works in scope, {len(todo):,} without an answer yet")
-    print(f"shared instructions: about {len(system) / CHARS_PER_TOKEN:,.0f} tokens; "
+    print(f"shared instructions: about {system_chars(job, system) / CHARS_PER_TOKEN:,.0f} tokens; "
           f"per-work text: about {user_chars / CHARS_PER_TOKEN / max(len(todo), 1):,.0f} tokens on average")
     print(f"batches of {BATCH_SIZE:,}: {-(-len(todo) // BATCH_SIZE)}")
     for label, cache in (("instructions read from the cache", "read"), ("instructions not cached", "none"),
                          ("every call writes the cache", "write")):
-        print(f"  batch price, {label:34s} ${estimate_cost(len(todo), len(system), user_chars, price, cache):,.2f}")
+        print(f"  batch price, {label:34s} ${estimate_cost(len(todo), system_chars(job, system), user_chars, price, cache):,.2f}")
     print("Estimates from character counts and a guessed answer length. The trial measures the real cost.")
 
 
@@ -299,7 +315,7 @@ def step_collect(name, job):
         if reply["status"] in ("validating", "in_progress", "finalizing"):
             running = True
             continue
-        rows = [parse_result(e, job, valid) for e in reply.get("results") or []]
+        rows = [parse_result(e, job, valid, b["work_ids"]) for e in reply.get("results") or []]
         with answers_path(name).open("a", encoding="utf-8") as out:
             for row in rows:
                 out.write(json.dumps(row, ensure_ascii=False) + "\n")
@@ -333,7 +349,7 @@ def step_run(job, model, limit, ceiling, batch_size):
             return
         system, requests = build_requests(job, todo)
         user_chars = sum(len(r["body"]["messages"][1]["content"]) for r in requests)
-        worst = worst_case(len(todo), len(system), user_chars, price)
+        worst = worst_case(len(todo), system_chars(job, system), user_chars, price)
         last = finished[-1] if finished else {}
         reason = stop_reason(spent, ceiling, worst, last.get("cost"), last.get("estimate"))
         if reason:
@@ -342,7 +358,8 @@ def step_run(job, model, limit, ceiling, batch_size):
         warm_cache(model, requests[0]["body"])
         reply = call("POST", BATCHES_URL, batch_payload(model, requests))
         batches.append({"id": reply["id"], "work_ids": [w["work_id"] for w in todo], "collected": False,
-                        "estimate": estimate_cost(len(todo), len(system), user_chars, price), "worst_case": worst})
+                        "estimate": estimate_cost(len(todo), system_chars(job, system), user_chars, price),
+                        "worst_case": worst})
         write_log(name, batches)
         print(f"sent batch {reply['id']}: {len(todo):,} works, estimated ${batches[-1]['estimate']:,.2f}, "
               f"at most ${worst:,.2f}")

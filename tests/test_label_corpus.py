@@ -1,6 +1,6 @@
 import json
 
-from label_corpus import (CHECK_WORDS, batch_payload, check_prompt, estimate_cost, parse_result,
+from label_corpus import (CHECK_WORDS, batch_payload, check_prompt, custom_id, estimate_cost, parse_result,
                           progress_line, request_body, run_name, split_batches, stop_reason, unanswered,
                           worst_case)
 
@@ -48,21 +48,21 @@ def test_split_batches_sends_an_oversized_request_alone_instead_of_dropping_it()
 def test_parse_result_keeps_only_labels_from_the_list():
     content = json.dumps({"recognized": True, "labels": [{"id": "action", "level": "core"},
                                                         {"id": "made-up", "level": "core"}]})
-    row = parse_result(result("metadata:w7", content), "metadata", {"action", "comedy"})
+    row = parse_result(result("metadata-1", content), "metadata", {"action", "comedy"}, ["w6", "w7"])
     assert row == {"work_id": "w7", "ok": True, "usage": {"prompt_tokens": 10},
                    "answer": {"recognized": True, "labels": [{"id": "action", "level": "core"}]}}
 
 
 def test_parse_result_reports_a_failed_or_unreadable_reply_without_raising():
-    failed = parse_result(result("plot:w1", error={"message": "overloaded"}), "plot", set())
+    failed = parse_result(result("plot-0", error={"message": "overloaded"}), "plot", set(), ["w1", "w2"])
     assert failed["ok"] is False and "overloaded" in failed["error"]
-    garbled = parse_result(result("plot:w2", "not json"), "plot", set())
+    garbled = parse_result(result("plot-1", "not json"), "plot", set(), ["w1", "w2"])
     assert garbled["ok"] is False and garbled["work_id"] == "w2"
 
 
 def test_parse_result_passes_a_check_answer_through():
     content = json.dumps({"narrative_fiction": False, "form": "non-fiction", "matches_metadata": "yes", "note": ""})
-    assert parse_result(result("check:w3", content), "check", set())["answer"]["form"] == "non-fiction"
+    assert parse_result(result("check-0", content), "check", set(), ["Q1:film"])["answer"]["form"] == "non-fiction"
 
 
 def test_unanswered_skips_works_already_done_and_keeps_order():
@@ -110,3 +110,9 @@ def test_run_stops_when_the_provider_reports_no_cost():
 def test_progress_line_projects_the_rest_from_the_cost_so_far():
     assert progress_line(1000, 4000, 8.0) == "1,000 of 4,000 works answered; $8.00 charged; about $24.00 more at this rate"
     assert "about $0.00 more" in progress_line(0, 4000, 0.0)
+
+
+def test_request_ids_use_only_characters_the_provider_allows():
+    import re
+    assert re.fullmatch(r"[A-Za-z0-9_-]+", custom_id("metadata", 17))
+    assert parse_result(result(custom_id("plot", 1), "{}"), "plot", set(), ["Q1:film", "Q2:novel"])["work_id"] == "Q2:novel"
