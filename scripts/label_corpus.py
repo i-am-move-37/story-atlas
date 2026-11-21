@@ -64,7 +64,7 @@ CHECK_WORDS = 400              # how much of the summary the check reads
 BATCH_SIZE = 1000              # works per batch when running in stages
 COST_TOLERANCE = 1.5           # stop if a batch costs more than this times its estimate
 POLL_SECONDS = 60
-DIRECT_WORKERS = 8
+DIRECT_WORKERS = 16
 DIRECT_FACTOR = 2.0            # an ordinary request costs twice the batch price
 
 FORMS = ["feature film", "short film", "television episode or series", "novel or novella",
@@ -74,13 +74,20 @@ CHECK_RULES = """You are checking entries in a corpus of plot summaries of featu
 Each entry has metadata (what the corpus believes the work is) and a summary. Answer from the
 summary and from what you know of the work.
 
+The corpus has two media. "film" means a feature-length film, including one made for television.
+"novel" means any prose fiction: a novel, a novella or a short story all belong under it.
+
 - narrative_fiction: true if the summary tells an invented story. False for essays, treatises,
-  textbooks, biographies of real people written as fact, and pages that describe a character,
-  a series or a franchise instead of telling one work's story.
-- form: what the summarized thing actually is.
-- matches_metadata: "yes" if the summary describes the work the metadata names; "no" if it
-  describes a different work that shares the title (a film's entry holding a television
-  episode, a video game or another film); "unsure" if you can't tell.
+  textbooks, memoirs and biographies written as fact, documentaries, and pages that describe a
+  character, a series or a franchise instead of telling one work's story.
+- form: what the summarized work itself is. A feature-length television film is a
+  "feature film". A film adapted from a novel is a "feature film", not a novel. Use
+  "television episode or series" only for an episode, a season or a whole series.
+- matches_metadata: "yes" if the summary tells the story of the work the metadata names. Still
+  "yes" when a short story sits under "novel", and when the summary seems to follow an
+  adaptation of the same story in the other medium (say so in the note). "no" only if it is a
+  different work that shares the title: a film's entry holding a television series, a video
+  game, or another film of the same name. "unsure" if you can't tell.
 - note: a few words when any answer is surprising, otherwise empty.
 """
 CHECK_SCHEMA = {
@@ -407,6 +414,7 @@ def step_direct(job, model, limit, ceiling):
     with ThreadPoolExecutor(DIRECT_WORKERS) as pool, answers_path(name).open("a", encoding="utf-8") as out:
         for row in pool.map(one, requests):
             out.write(json.dumps(row, ensure_ascii=False) + "\n")
+            out.flush()
             spent += (row.get("usage") or {}).get("cost") or 0.0
             failed += not row["ok"]
     print(f"{len(todo):,} works sent one by one: {failed} failed, ${spent:,.4f} charged")
