@@ -170,3 +170,11 @@ works (same small model, a question that separates drama from documentary, 3 cen
 25 documentaries, concert films and other recordings (leave), 2 where the summary text is about
 the work rather than its story (Three Men in a Boat, Pierre Menard; undecided). So 1,254 works
 leave in all. The 75 "could not tell if it matches" works stay. Still not applied to `scope.py`.
+
+## 2026-11-21: first night of the Metadata method
+
+The run stopped itself at its ceiling as designed: 6,350 of 35,386 works labeled in 43 batches of
+150, $38.26 charged ($0.0060 per work), no failed requests. The model declined (did not recognize
+the work) on 52 works, 0.8%, and returned no genre for 138, 2.2%. Tonight's total with the check
+and the second pass: $43.56 against a $50 limit. At this rate the remaining works cost about $175,
+less the roughly 1,250 that are leaving the corpus.
