@@ -163,3 +163,10 @@ Gandhi, I, Tonya and Birdman of Alcatraz (ordinary narrative films). The check's
 "invented story" and the model took biopics to fail it. These need a second pass that separates
 documentary from dramatization before any is dropped. Also undecided: 75 works where the check
 could not tell whether the summary matches the entry.
+
+**Decided (Scott, 2026-11-20): dramatized true stories stay.** A second pass on the 151 held-back
+works (same small model, a question that separates drama from documentary, 3 cents;
+`data/labels/recheck-true-stories--claude-haiku-5.5.jsonl`) gives: 124 dramatized stories (stay),
+25 documentaries, concert films and other recordings (leave), 2 where the summary text is about
+the work rather than its story (Three Men in a Boat, Pierre Menard; undecided). So 1,254 works
+leave in all. The 75 "could not tell if it matches" works stay. Still not applied to `scope.py`.
