@@ -144,3 +144,22 @@ Adapt the Alien Space of Science method (arXiv 2603.01092; code at alejandrohdez
 ## Next
 - Deduplicate across sources (Wikidata IDs for TMDB; titles plus year for the Wikipedia sets).
 - Resolve the remaining WikiPlots unknowns via Wikidata.
+
+## 2026-11-20: the check on the whole corpus, and what leaves
+
+The check ran on all 35,386 in-scope works (small model, one request per work): $5.27, no failures.
+Answers: `data/labels/check--claude-haiku-5.5.jsonl`.
+
+**Decided (Scott, 2026-11-20):** short stories stay under "novel". Nothing else outside feature
+films and prose fiction stays: short films, television, comics, plays, poems, video games,
+non-fiction, franchise pages, and summaries that belong to a different work all leave.
+
+Counted that way, 1,229 works leave and 34,006 or more stay. Not yet applied to `scope.py`.
+
+**Held back, not decided:** 151 works the check called "not an invented story" while still calling
+them a feature film or prose fiction (149 are films). A sample of 25 shows two different things
+mixed together: documentaries and concert films (should leave) and dramatized true stories such as
+Gandhi, I, Tonya and Birdman of Alcatraz (ordinary narrative films). The check's wording said
+"invented story" and the model took biopics to fail it. These need a second pass that separates
+documentary from dramatization before any is dropped. Also undecided: 75 works where the check
+could not tell whether the summary matches the entry.
