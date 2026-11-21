@@ -267,6 +267,12 @@ def write_log(name, batches):
 
 # ---------- network ----------
 
+class ApiError(Exception):
+    def __init__(self, code, text):
+        super().__init__(f"{code} {text}")
+        self.code = code
+
+
 def call(method, url, payload=None):
     data = None if payload is None else json.dumps(payload, ensure_ascii=False).encode("utf-8")
     request = urllib.request.Request(url, data=data, method=method, headers={
@@ -275,7 +281,7 @@ def call(method, url, payload=None):
         with urllib.request.urlopen(request, timeout=600) as r:
             return json.loads(r.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
-        raise SystemExit(f"{method} {url} failed: {e.code} {e.read().decode('utf-8', 'replace')[:600]}")
+        raise ApiError(e.code, f"{method} {url}: {e.read().decode('utf-8', 'replace')[:600]}") from e
 
 
 def warm_cache(model, body):
@@ -311,7 +317,13 @@ def step_collect(name, job):
     for b in batches:
         if b["collected"]:
             continue
-        reply = call("GET", f"{BATCHES_URL}/{b['id']}")
+        try:
+            reply = call("GET", f"{BATCHES_URL}/{b['id']}")
+        except ApiError as e:
+            if e.code != 404:
+                raise
+            # A batch can't be fetched for a short while after it is created.
+            reply = {"status": "validating"}
         if reply["status"] in ("validating", "in_progress", "finalizing"):
             running = True
             continue
