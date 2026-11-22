@@ -178,3 +178,9 @@ The run stopped itself at its ceiling as designed: 6,350 of 35,386 works labeled
 the work) on 52 works, 0.8%, and returned no genre for 138, 2.2%. Tonight's total with the check
 and the second pass: $43.56 against a $50 limit. At this rate the remaining works cost about $175,
 less the roughly 1,250 that are leaving the corpus.
+
+**Removals applied (2026-11-21).** `scripts/check_scope.py` reads the check's answers and the second
+pass and names the 1,254 works that leave, with a reason each; `label_corpus.py` skips them for the
+Metadata and Plot methods. The rule-based `scope` column in `works.parquet` is untouched and nothing
+is deleted. In scope now: 34,132 works, of which 28,091 still need the Metadata method (about $170
+at the measured rate of $0.0060 per work). Three Men in a Boat and Pierre Menard stay until decided.

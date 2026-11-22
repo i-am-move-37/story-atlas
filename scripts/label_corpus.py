@@ -35,6 +35,7 @@ from pathlib import Path
 
 import pandas as pd
 
+import check_scope
 from genres import load_scheme
 from label_pilot import (LABELS_SCHEMA, MODEL, RULES, api_key, clean_labels, metadata_prompt,
                          plot_prompt, scheme_order, scheme_text)
@@ -233,10 +234,13 @@ def run_name(job, model):
 
 # ---------- data ----------
 
-def load_works(limit=None, only=None):
-    """In-scope works with their summary text, as dicts the prompts understand."""
+def load_works(limit=None, only=None, keep_removed=False):
+    """In-scope works with their summary text, as dicts the prompts understand.
+    Works the corpus check removed are left out unless keep_removed (the check itself keeps them)."""
     works = pd.read_parquet(ROOT / "data" / "works.parquet")
     works = works[works.scope == "in"]
+    if not keep_removed:
+        works = works[~works.work_id.astype(str).isin(check_scope.removed())]
     if only is not None:
         works = works[works.work_id.astype(str).isin(only)]
     if limit:
@@ -309,7 +313,7 @@ def warm_cache(model, body):
 
 def step_plan(job, model, limit):
     name, price = run_name(job, model), PRICES[model]
-    works = load_works(limit)
+    works = load_works(limit, keep_removed=job == "check")
     done = done_ids(name)
     todo = [w for w in works if w["work_id"] not in done]
     system, requests = build_requests(job, todo)
@@ -356,7 +360,7 @@ def step_collect(name, job):
 def step_run(job, model, limit, ceiling, batch_size):
     """Send one batch at a time, checking what each cost before sending the next."""
     name, price = run_name(job, model), PRICES[model]
-    works = load_works(limit)
+    works = load_works(limit, keep_removed=job == "check")
     total = len(works)
     while True:
         if step_collect(name, job):
@@ -394,7 +398,7 @@ def step_direct(job, model, limit, ceiling):
     """One ordinary request per unanswered work. A work the provider refuses fails alone."""
     name, price = run_name(job, model), PRICES[model]
     done = done_ids(name)
-    todo = [w for w in load_works(limit) if w["work_id"] not in done]
+    todo = [w for w in load_works(limit, keep_removed=job == "check") if w["work_id"] not in done]
     system, requests = build_requests(job, todo)
     user_chars = sum(len(r["body"]["messages"][1]["content"]) for r in requests)
     worst = DIRECT_FACTOR * worst_case(len(todo), system_chars(job, system), user_chars, price)
