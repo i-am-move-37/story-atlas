@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Precision, Recall, F1</title>
+<style>
+  :root {
+    --bg: #0c100d; --panel: #131a15; --line: #25322a; --fg: #d6e2d8; --dim: #8fa396;
+    --accent: #6fe08a; --hit: #6fe08a; --err: #ff8a7a; --miss: #f2c25c; --neutral: #7f8f86;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 17px/1.6 "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 20px 80px; }
+  h1 { font-size: 30px; margin: 0 0 6px; text-wrap: balance; }
+  h2 { font-size: 21px; margin: 44px 0 10px; color: var(--accent); }
+  p { margin: 10px 0; }
+  .lede { color: var(--dim); margin-bottom: 26px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; margin: 14px 0; }
+  .formula { font: 19px/1.5 Consolas, "Cascadia Mono", monospace; margin: 8px 0; }
+  .q { color: var(--dim); font-style: italic; }
+  .hit { color: var(--hit); } .err { color: var(--err); } .miss { color: var(--miss); } .neu { color: var(--neutral); }
+  b.hit, b.err, b.miss, b.neu { font-weight: 600; }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--dim); font-weight: 600; font-size: 14px; }
+  td.n, th.n { text-align: right; font-family: Consolas, monospace; }
+  .calc { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .calc label { display: block; font-size: 14px; color: var(--dim); }
+  .calc input { width: 100%; margin-top: 4px; padding: 8px 10px; font: 18px Consolas, monospace;
+                background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; }
+  .out { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; }
+  .out div { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .out span { display: block; font-size: 13px; color: var(--dim); }
+  .out strong { font: 26px Consolas, monospace; color: var(--accent); }
+  .work { font-size: 14px; color: var(--dim); font-family: Consolas, monospace; margin-top: 4px; }
+  ul { padding-left: 22px; margin: 8px 0; }
+  li { margin: 5px 0; }
+  @media (max-width: 520px) { .calc, .out { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+<h1>Precision, recall and F1</h1>
+<p class="lede">A reference for the story-atlas genre labeling. All three numbers run from 0 to 1, and higher is better.</p>
+
+<h2>The three counts everything is built from</h2>
+<p>A method (a model, or a database lookup) gives each work a list of genres. You have judged genres for the same work. Compare the two lists and every genre lands in one of four places:</p>
+<div class="scroll"><table>
+<tr><th>Name</th><th>What it is</th><th>In the blind check</th></tr>
+<tr><td><b class="hit">Hit</b></td><td>The method gave the genre, and it is right.</td><td>The method gave it and you starred it.</td></tr>
+<tr><td><b class="err">Error</b></td><td>The method gave the genre, and it is wrong.</td><td>The method gave it and you marked it Wrong.</td></tr>
+<tr><td><b class="miss">Miss</b></td><td>The genre is right, and the method did not give it.</td><td>You starred it and the method did not give it.</td></tr>
+<tr><td><b class="neu">Neutral</b></td><td>Acceptable but not central. Counted nowhere.</td><td>The method gave it and you left it blank.</td></tr>
+</table></div>
+<p>The counts are added up over all the works first, and the three numbers are computed once from those totals. (That pooling is called <em>micro-averaging</em>. The alternative, computing a score per work and averaging the scores, would let a work with one genre weigh as much as a work with five.)</p>
+
+<h2>Precision</h2>
+<div class="card">
+<p class="q">Of the genres the method gave, what share were right?</p>
+<p class="formula">precision = <span class="hit">hits</span> / (<span class="hit">hits</span> + <span class="err">errors</span>)</p>
+<p>It punishes saying too much. A method that gives only the one genre it is surest of gets high precision.</p>
+</div>
+
+<h2>Recall</h2>
+<div class="card">
+<p class="q">Of the genres that are right, what share did the method give?</p>
+<p class="formula">recall = <span class="hit">hits</span> / (<span class="hit">hits</span> + <span class="miss">misses</span>)</p>
+<p>It punishes saying too little. A method that gives every genre on the list gets recall of 1.</p>
+</div>
+<p>The two have the same top and different bottoms. Precision divides the hits by everything the method <em>said</em>. Recall divides the hits by everything that was <em>true</em>.</p>
+
+<h2>F1</h2>
+<div class="card">
+<p class="q">One number that is high only when precision and recall are both high.</p>
+<p class="formula">F1 = 2 &times; precision &times; recall / (precision + recall)</p>
+<p>The same thing written with the counts, which is often easier to think with:</p>
+<p class="formula">F1 = 2 &times; <span class="hit">hits</span> / (2 &times; <span class="hit">hits</span> + <span class="err">errors</span> + <span class="miss">misses</span>)</p>
+</div>
+<ul>
+<li>F1 is the <em>harmonic mean</em> of precision and recall. An ordinary average of 1.0 and 0.0 is 0.5; their harmonic mean is 0. So a method can't buy a good F1 by maxing one number and abandoning the other.</li>
+<li>When precision and recall are equal, F1 equals them. When they differ, F1 sits between them, closer to the lower one.</li>
+<li>In the second formula an error and a miss cost exactly the same. That is what the "1" means: recall is weighted 1 times as heavily as precision. (F2 would count a miss as worse than an error; F0.5 the reverse.)</li>
+</ul>
+
+<h2>One film, worked through</h2>
+<div class="card">
+<p>You starred: <b>crime</b>, <b>thriller</b>, <b>noir</b>.<br>
+The method gave: <b>crime</b>, <b>thriller</b>, <b>romance</b>, <b>legal</b>.<br>
+You marked romance Wrong and left legal blank.</p>
+<div class="scroll"><table>
+<tr><th>Genre</th><th>Method gave it</th><th>Your mark</th><th>Counts as</th></tr>
+<tr><td>crime</td><td>yes</td><td>star</td><td class="hit">hit</td></tr>
+<tr><td>thriller</td><td>yes</td><td>star</td><td class="hit">hit</td></tr>
+<tr><td>romance</td><td>yes</td><td>Wrong</td><td class="err">error</td></tr>
+<tr><td>legal</td><td>yes</td><td>blank</td><td class="neu">neutral (not counted)</td></tr>
+<tr><td>noir</td><td>no</td><td>star</td><td class="miss">miss</td></tr>
+</table></div>
+<p>Hits 2, errors 1, misses 1.</p>
+<p class="formula">precision = 2 / (2 + 1) = 0.667<br>recall = 2 / (2 + 1) = 0.667<br>F1 = 2&times;2 / (2&times;2 + 1 + 1) = 0.667</p>
+</div>
+
+<h2>Try your own counts</h2>
+<div class="card">
+<div class="calc">
+<label><span class="hit">Hits</span><input id="h" type="number" min="0" value="126"></label>
+<label><span class="err">Errors</span><input id="e" type="number" min="0" value="28"></label>
+<label><span class="miss">Misses</span><input id="m" type="number" min="0" value="86"></label>
+</div>
+<div class="out">
+<div><span>Precision</span><strong id="p"></strong><div class="work" id="pw"></div></div>
+<div><span>Recall</span><strong id="r"></strong><div class="work" id="rw"></div></div>
+<div><span>F1</span><strong id="f"></strong><div class="work" id="fw"></div></div>
+</div>
+<p style="color:var(--dim);font-size:14px;margin-bottom:0">The starting numbers are made up. Raise the errors and watch only precision move; raise the misses and watch only recall move.</p>
+</div>
+
+<h2>Reading a result quickly</h2>
+<ul>
+<li><b>High precision, low recall:</b> a cautious method. What it says is right, but it leaves real genres out.</li>
+<li><b>Low precision, high recall:</b> a generous method. It finds the real genres and adds wrong ones.</li>
+<li><b>Coverage</b> (also in our tables) is separate: the share of works the method gave any answer for at all.</li>
+<li><b>"Points"</b> in our discussions means hundredths: 0.744 against 0.688 is a gap of 5.6 points.</li>
+</ul>
+</main>
+<script>
+  const $ = id => document.getElementById(id);
+  function show() {
+    const h = Math.max(0, +$("h").value || 0), e = Math.max(0, +$("e").value || 0), m = Math.max(0, +$("m").value || 0);
+    const fmt = (top, bottom) => bottom ? (top / bottom).toFixed(3) : "n/a";
+    $("p").textContent = fmt(h, h + e);  $("pw").textContent = h + " / (" + h + " + " + e + ")";
+    $("r").textContent = fmt(h, h + m);  $("rw").textContent = h + " / (" + h + " + " + m + ")";
+    $("f").textContent = fmt(2 * h, 2 * h + e + m);  $("fw").textContent = (2 * h) + " / (" + (2 * h) + " + " + e + " + " + m + ")";
+  }
+  ["h", "e", "m"].forEach(id => $(id).addEventListener("input", show));
+  show();
+</script>
+</body>
+</html>
