@@ -211,8 +211,8 @@ genre list and rules may be the rest. Not yet separated. Test files:
 `data/labels/cheaper-test--*.jsonl`.
 
 **Why the top model scores 0.688 today against 0.744 in the pilot (2026-11-23, no cost).** Compared
-work by work on the 38: the genre set is identical on 26 works; across the other 12 there are 16
-changes out of 84 genres. Pilot counts: 58 hits, 7 errors, 33 misses. Today: 54 hits, 12 errors,
+work by work on the 38: the genre set is identical on 26 works; across the other 12 there are 14
+changes out of 84 genres (first written here as 16, a miscount). Pilot counts: 58 hits, 7 errors, 33 misses. Today: 54 hits, 12 errors,
 37 misses. The 5.6-point gap splits in two:
 - 2.3 points are five added genres Scott never judged, scored as errors because the check never
   showed them: comedy on Metro and on You Again (the genre added at his request after the check),
@@ -223,3 +223,29 @@ changes out of 84 genres. Pilot counts: 58 hits, 7 errors, 33 misses. Today: 54 
 Reading: no sign the new list or rules made the answers worse. Whether four dropped genres is
 ordinary run-to-run variation is not known; a repeat run of the same prompt on the 38 (about 25
 cents) would measure it. `docs/metrics-reference.html` added as Scott's reference for the metrics.
+
+**Two identical runs of the top model on the 38 (2026-11-24, 25 cents).** Same instructions, same
+works, temperature 0 both times. They still differ: same genre set on 31 of 38 works, 7 genre
+changes out of 82 (13 of 87 at subgenre level). F1 against Scott's marks: 0.688 and 0.671, so
+1.7 points apart with nothing changed. One pair of runs, so one estimate; the cause is not known.
+
+What follows:
+- **Correction: the 2-point rule cannot decide on 38 works.** The cheaper model's 0.658 is 3.0
+  points below run 1 (fails the rule) and 1.3 below run 2 (passes). The rule said no with the run
+  in hand; its margin is narrower than the spread between identical runs. The earlier statement
+  that the comparison "stands" was too strong.
+- **The case against the cheaper model rests on how far its answers are from the top model's,
+  which is far beyond that spread.** On the same 38 works: top model against itself, 7 genre
+  changes, same set on 31 works; cheaper model against the top model, 38 or 39 changes, same set
+  on 12 works. Genres per work 1.71 against 2.16 and 2.13. The 495-work sample shows the same
+  shape (2.0 against 2.6 labels per work, 29 declines against 4). Stay with the top model.
+- **Pilot answers against today's: 14 and 17 genre changes, about twice the 7 between identical
+  runs.** Three of the four dropped starred genres are missing in both of today's runs (adventure
+  on Into the Wild, vigilante-revenge on Lone Wolf and Cub, teen-coming-of-age on Silent to the
+  Bone); historical on Perlasca came back. So more than run-to-run variation, but not attributable:
+  the stars were chosen from lists that contained the pilot run's own answers, so any rerun is at
+  a disadvantage against them. Only rerunning the pilot-era instructions on the 38 would separate
+  the two (about 25 to 50 cents). Open; it does not block the labeling run.
+- **For later:** the planned rule that merges subgenres where the Metadata and Plot methods agree
+  poorly (kappa below 0.4) needs a Metadata-against-itself baseline to be readable, since two
+  identical Metadata runs already differ on 13 of 87 subgenre labels.
