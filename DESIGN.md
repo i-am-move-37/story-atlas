@@ -184,3 +184,28 @@ pass and names the 1,254 works that leave, with a reason each; `label_corpus.py`
 Metadata and Plot methods. The rule-based `scope` column in `works.parquet` is untouched and nothing
 is deleted. In scope now: 34,132 works, of which 28,091 still need the Metadata method (about $170
 at the measured rate of $0.0060 per work). Three Men in a Boat and Pierre Menard stay until decided.
+
+## 2026-11-23: can a cheaper model do the Metadata method? (No, by the rule set beforehand)
+
+Scott may not be able to fund the remaining ~$225 for two weeks, so a cheaper model was tested
+(about $1 in all). The model one quarter the price (`anthropic/claude-sonnet-5.5`) answered the
+Metadata method on the 38 hand-checked works and on 495 works the top model had already labeled.
+The top model also re-answered the 38 with today's instructions, because its pilot answers used
+the older genre list. Rule set before looking: switch only if the cheaper model's F1 on the 38 is
+within 2 points of the top model's and no genre collapses on the sample.
+
+Result on the 38 (genre level, genres Scott was never shown counted as errors):
+top model today 0.688 (precision 0.818, recall 0.593); cheaper model 0.658 (precision 0.873,
+recall 0.527). Difference 3.0 points, 95% interval -10.5 to +4.4 (bootstrap over works). Fails the
+rule, though 38 works cannot tell a 3-point gap from none.
+
+Result on the 495: the cheaper model gives fewer genres per work (2.0 against 2.6), declines more
+often (29 works against 4), picks the same set of genres on 36% of works, and under-uses several
+genres the top model uses (young-adult 18 against 57, social-realism 16 against 32). Overlap F1
+against the top model: 0.762 genres, 0.611 subgenres. Measured cost $0.0012 per work.
+
+**Decision pending Scott:** by the rule, stay with the top model. Side finding to chase: the top
+model scores lower today (0.688) than with its pilot answers (0.744) on the same works. Part of
+that is the gold set leaning toward the pilot answers (he judged those exact labels); the changed
+genre list and rules may be the rest. Not yet separated. Test files:
+`data/labels/cheaper-test--*.jsonl`.
