@@ -209,3 +209,17 @@ model scores lower today (0.688) than with its pilot answers (0.744) on the same
 that is the gold set leaning toward the pilot answers (he judged those exact labels); the changed
 genre list and rules may be the rest. Not yet separated. Test files:
 `data/labels/cheaper-test--*.jsonl`.
+
+**Why the top model scores 0.688 today against 0.744 in the pilot (2026-11-23, no cost).** Compared
+work by work on the 38: the genre set is identical on 26 works; across the other 12 there are 16
+changes out of 84 genres. Pilot counts: 58 hits, 7 errors, 33 misses. Today: 54 hits, 12 errors,
+37 misses. The 5.6-point gap splits in two:
+- 2.3 points are five added genres Scott never judged, scored as errors because the check never
+  showed them: comedy on Metro and on You Again (the genre added at his request after the check),
+  young-adult, romantic-comedy, psychological-philosophical. A measurement artifact, not a decline.
+- 3.3 points are four starred genres no longer given (historical on Perlasca, adventure on Into
+  the Wild, vigilante-revenge on Lone Wolf and Cub, teen-coming-of-age on Silent to the Bone).
+  None relates to the three rules that changed. No change moved toward a genre he marked Wrong.
+Reading: no sign the new list or rules made the answers worse. Whether four dropped genres is
+ordinary run-to-run variation is not known; a repeat run of the same prompt on the 38 (about 25
+cents) would measure it. `docs/metrics-reference.html` added as Scott's reference for the metrics.
